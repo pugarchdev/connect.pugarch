@@ -1871,7 +1871,7 @@ export class DynamicFlowEngine {
         console.log(`🔍 Querying Grievance with: ${JSON.stringify(query)}`);
         
         const grievance = await Grievance.findOne(query)
-          .populate("assignedTo", "name")
+          .populate("assignedTo", "firstName lastName designations")
           .populate("departmentId", "name nameHi nameOr nameMr");
 
         if (grievance) {
@@ -1888,8 +1888,16 @@ export class DynamicFlowEngine {
           this.session.data.remarks =
             rawRemarks && rawRemarks.trim() !== "" ? rawRemarks : noRemarksMap[lang] || noRemarksMap.en;
           
-          this.session.data.assignedTo =
-            (grievance as any).assignedTo?.name ?? "Under Review";
+          const assignee = (grievance as any).assignedTo;
+          if (assignee) {
+            const name = `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim();
+            const designation = (assignee.designations && assignee.designations.length > 0) 
+              ? ` (${assignee.designations[0]})` 
+              : '';
+            this.session.data.assignedTo = `${name}${designation}` || "Under Review";
+          } else {
+            this.session.data.assignedTo = "Under Review";
+          }
 
           this.session.data.date = new Date(
             grievance.createdAt,
@@ -1932,7 +1940,7 @@ export class DynamicFlowEngine {
         
         console.log(`🔍 Querying Appointment with: ${JSON.stringify(query)}`);
 
-        const appointment = await Appointment.findOne(query).populate("assignedTo", "name");
+        const appointment = await Appointment.findOne(query).populate("assignedTo", "firstName lastName designations");
 
         if (appointment) {
           console.log(`✅ Found Appointment: ${appointment.appointmentId} (Status: ${appointment.status})`);
@@ -1948,8 +1956,16 @@ export class DynamicFlowEngine {
           this.session.data.remarks =
             rawRemarks && rawRemarks.trim() !== "" ? rawRemarks : noRemarksMap[lang] || noRemarksMap.en;
           
-          this.session.data.assignedTo =
-            (appointment as any).assignedTo?.name ?? "Pending Review";
+          const assignee = (appointment as any).assignedTo;
+          if (assignee) {
+            const name = `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim();
+            const designation = (assignee.designations && assignee.designations.length > 0) 
+              ? ` (${assignee.designations[0]})` 
+              : '';
+            this.session.data.assignedTo = `${name}${designation}` || "Scheduled";
+          } else {
+            this.session.data.assignedTo = "Scheduled";
+          }
 
           this.session.data.date = new Date(
             appointment.createdAt,

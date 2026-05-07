@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-const API_TIMEOUT_MS = 15000;
+const API_TIMEOUT_MS = 30000;
 
 class APIClient {
   private client: AxiosInstance;
