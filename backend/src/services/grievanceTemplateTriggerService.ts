@@ -103,7 +103,9 @@ export async function triggerGrievanceEvent(options: {
   admin?: any;
   remarks?: string;
   previousDept?: string;
+  previousOffice?: string;
   newDept?: string;
+  newOffice?: string;
   media?: any[];
   buttonParam?: string;
   department?: any;
@@ -126,7 +128,9 @@ export async function triggerGrievanceEvent(options: {
       companyName: company.name,
       language,
       previousDept: options.previousDept,
+      previousOffice: options.previousOffice,
       newDept: options.newDept,
+      newOffice: options.newOffice,
       department: options.department,
       subDept: options.subDept,
       submittedOn: options.submittedOn,
@@ -466,7 +470,9 @@ export async function triggerAdminAssignmentNotification(options: {
     remarks: options.remarks,
     admin: { fullName: options.reassignedByName || options.assignedByName || options.revertedByName || 'Administrator' },
     previousDept: options.originalDepartmentName,
+    previousOffice: options.originalOfficeName,
     newDept: options.category,
+    newOffice: options.subDepartmentName,
     media: options.media,
     buttonParam: options.buttonParam,
     department: { name: options.category },

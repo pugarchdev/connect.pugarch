@@ -1256,10 +1256,10 @@ router.put('/:id/assign', requirePermission(Permission.ASSIGN_GRIEVANCE), async 
       oldDepartmentId ? Department.findById(oldDepartmentId).select('_id name') : Promise.resolve(null),
       oldSubDepartmentId ? Department.findById(oldSubDepartmentId).select('_id name') : Promise.resolve(null)
     ]);
-    let currentDepartmentName = oldDepartmentDoc?.name || grievance.category || 'Collector & DM';
-    let currentOfficeName = oldSubDepartmentDoc?.name || oldDepartmentDoc?.name || 'N/A';
+    let currentDepartmentName = oldDepartmentDoc?.name || grievance.category || 'N/A';
+    let currentOfficeName = oldSubDepartmentDoc?.name || 'N/A';
     const originalDepartmentName = oldDepartmentDoc?.name || grievance.category || 'Collector & DM';
-    const originalOfficeName = oldSubDepartmentDoc?.name || oldDepartmentDoc?.name || 'N/A';
+    const originalOfficeName = oldSubDepartmentDoc?.name || 'N/A';
 
     // Update assignment details
     grievance.assignedTo = assignedUser._id;
@@ -1291,11 +1291,12 @@ router.put('/:id/assign', requirePermission(Permission.ASSIGN_GRIEVANCE), async 
           !oldDepartmentId ||
           oldDepartmentId.toString() !== nextDepartmentId.toString() ||
           oldSubDepartmentId?.toString() !== nextSubDepartmentId?.toString();
+        currentDepartmentName = toDepartmentName || currentDepartmentName;
+        currentOfficeName = toSubDepartmentName || 'N/A';
+
         if (departmentChanged) {
           grievance.departmentId = nextDepartmentId as any;
           grievance.subDepartmentId = nextSubDepartmentId as any;
-          currentDepartmentName = toDepartmentName || currentDepartmentName;
-          currentOfficeName = toSubDepartmentName || toDepartmentName || currentOfficeName;
 
           // Add department transfer event to timeline
           grievance.timeline.push({

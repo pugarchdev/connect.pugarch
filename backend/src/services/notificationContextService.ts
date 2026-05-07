@@ -21,7 +21,9 @@ export interface INotificationContext {
   company_name: string;
   current_date: string;
   previous_dept?: string;
+  previous_office?: string;
   new_dept?: string;
+  new_office?: string;
   [key: string]: any;
 }
 
@@ -44,7 +46,9 @@ export class NotificationContextService {
       companyName?: string;
       language?: string;
       previousDept?: string;
+      previousOffice?: string;
       newDept?: string;
+      newOffice?: string;
       submittedOn?: Date | string;
       reassignedOn?: Date | string;
     } = {}
@@ -72,21 +76,23 @@ export class NotificationContextService {
       status: this.formatStatus(grievance.status, lang),
       department: options.department?.name || options.department || grievance.departmentId?.name || grievance.category || 'N/A',
       office: options.subDept?.name || options.subDept || grievance.subDepartmentId?.name || 'N/A',
-      description: this.sanitizeText(grievance.description || '', 400),
+      description: this.sanitizeText(grievance.description || 'N/A', 400),
       created_at: createdAt,
       submitted_on: createdAt,
       reassigned_on: reassignedOn,
       admin_name: options.admin?.fullName || (options.admin?.firstName ? `${options.admin.firstName}${options.admin.lastName ? ' ' + options.admin.lastName : ''}` : 'Officer'),
-      remarks: this.sanitizeText(options.remarks || grievance.remarks || '', 200),
+      remarks: this.sanitizeText(options.remarks || grievance.remarks || 'N/A', 200),
       company_name: options.companyName || this.DEFAULT_PORTAL_NAME,
       current_date: moment().tz(timezone).format('DD MMM YYYY, hh:mm A'),
       previous_dept: options.previousDept || 'N/A',
+      previous_office: options.previousOffice || 'N/A',
       new_dept: options.newDept || 'N/A',
+      new_office: options.newOffice || 'N/A',
       assigned_by: options.admin?.fullName || (options.admin?.firstName ? `${options.admin.firstName}${options.admin.lastName ? ' ' + options.admin.lastName : ''}` : 'Officer'),
       reassigned_by: options.admin?.fullName || (options.admin?.firstName ? `${options.admin.firstName}${options.admin.lastName ? ' ' + options.admin.lastName : ''}` : 'Officer'),
       reverted_by: options.admin?.fullName || (options.admin?.firstName ? `${options.admin.firstName}${options.admin.lastName ? ' ' + options.admin.lastName : ''}` : 'Officer'),
       original_department: options.previousDept || 'N/A',
-      original_office: options.newDept || 'N/A'
+      original_office: options.previousOffice || 'N/A'
     };
   }
 

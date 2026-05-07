@@ -27,8 +27,8 @@ export class TemplateResolverService {
   private static LEGACY_VARIABLE_MAPS: Record<string, string[]> = {
     'grievance_received_admin_v2': ['admin_name', 'id', 'citizen_name', 'department', 'office', 'description', 'created_at'],
     'grievance_assigned_admin_v2': ['admin_name', 'id', 'citizen_name', 'department', 'office', 'description', 'assigned_by', 'current_date', 'remarks'],
-    'grievance_reassigned_admin_v2': ['admin_name', 'id', 'citizen_name', 'department', 'office', 'description', 'created_at', 'reassigned_by', 'remarks', 'current_date', 'original_department', 'original_office'],
-    'grievance_reverted_company_v2': ['admin_name', 'id', 'citizen_name', 'department', 'office', 'description', 'reverted_by', 'remarks', 'current_date'],
+    'grievance_reassigned_admin_v2': ['admin_name', 'id', 'citizen_name', 'original_department', 'original_office', 'description', 'created_at', 'reassigned_by', 'remarks', 'current_date', 'department', 'office'],
+    'grievance_reverted_company_v2': ['admin_name', 'id', 'citizen_name', 'original_department', 'original_office', 'description', 'reverted_by', 'remarks', 'current_date'],
     'grievance_status_resolved_citizen_v2': ['citizen_name', 'id', 'department', 'office', 'description', 'admin_name', 'current_date', 'remarks'],
     'grievance_status_rejected_citizen_v2': ['citizen_name', 'id', 'department', 'office', 'description', 'admin_name', 'current_date', 'remarks'],
     'grievance_status_inprogress_citizen_v2': ['citizen_name', 'id', 'department', 'office', 'description', 'admin_name', 'current_date', 'remarks'],
@@ -92,9 +92,10 @@ export class TemplateResolverService {
         variableMap = this.LEGACY_VARIABLE_MAPS[templateName] || [];
       }
 
-      const values = variableMap.length > 0 
-        ? variableMap.map(key => String(context[key] || ''))
-        : [];
+      const values = variableMap.map(key => {
+        const value = context[key];
+        return (value !== undefined && value !== null && value !== '') ? String(value) : ' ';
+      });
 
       // ✅ VALIDATION: Check if variable count matches Meta's requirements
       const expectedCount = META_GRIEVANCE_TEMPLATE_VARIABLE_COUNT[templateName];
