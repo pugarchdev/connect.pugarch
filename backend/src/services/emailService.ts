@@ -15,12 +15,12 @@ const DEFAULT_WA_MESSAGE_OVERRIDES: Record<string, string> = {
 
 Respected {recipientName},
 
-Details:
+Remarks:
 🎫 *Reference ID:* {grievanceId}
 👤 *Citizen Name:* {citizenName}
 🏢 *Department:* {departmentName}
 🏢 *Office:* {officeName}
-📝 *Grievance Details:*
+📝 *Grievance Description:*
 {grievanceDetails}
 📅 *Submitted On:* {submittedDate}
 👨‍💼 *Reassigned By:* {reassignedByName}
@@ -42,7 +42,7 @@ Work on your grievance {grievanceId} is now in progress.`,
   grievance_status_resolved: `*{localizedCompanyBrand}*
 Your grievance {grievanceId} has been resolved.`,
   grievance_status_rejected: `*{localizedCompanyBrand}*
-Your grievance {grievanceId} has been rejected. Details: {remarks}`
+Your grievance {grievanceId} has been rejected. Remarks: {remarks}`
 };
 
 /**

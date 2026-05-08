@@ -78,9 +78,9 @@
     "mr": "❌ *कोणतेही रेकॉर्ड आढळले नाही*\n\nआम्हाला त्या संदर्भ क्रमांकाशी जुळणारे कोणतेही रेकॉर्ड सापडले नाही.\n\nकृपया क्रमांक तपासा किंवा सपोर्टशी संपर्क साधा."
   },
   "track_found": {
-    "en": "📌 📄 *Grievance Status*\n\n📅 Date: {date}\n🎫 Ref No: {refNumber}\n\n🏢 Dept: {departmentName}\n📂 Office: {category}\n📊 Status: 📋 *{status}*\n👤 Assigned To: {assignedTo}\n\n📝 Details: {remarks}\n",
-    "hi": "📌 📄 *शिकायत की स्थिति*\n\n📅 तिथि: {date}\n🎫 संदर्भ संख्या: {refNumber}\n\n🏢 विभाग: {departmentName}\n📂 कार्यालय: {category}\n📊 स्थिति: 📋 *{status}*\n👤 किसे सौंपा गया: {assignedTo}\n\n📝 विवरण: {remarks}\n",
-    "or": "📌 📄 *ଅଭିଯୋଗ ସ୍ଥିତି*\n\n📅 ତାରିଖ: {date}\n🎫 ରେଫରେନ୍ସ ନମ୍ବର: {refNumber}\n\n🏢 ବିଭାଗ: {departmentName}\n📂 ଅଫିସ୍: {category}\n📊 ସ୍ଥିତି: 📋 *{status}*\n👤 ଦାୟିତ୍ୱରେ: {assignedTo}\n\n📝 ବିବରଣୀ: {remarks}\n"
+    "en": "📌 📄 *Grievance Status*\n\n📅 Date: {date}\n🎫 Ref No: {refNumber}\n🏢 Dept: {departmentName}\n📂 Office: {category}\n📊 Status: 📋 *{status}*\n👤 Assigned To: {assignedTo}\n\n📝 Remarks: {remarks}\n\n*Your grievance, our priority.*\n*District Administration, Jharsuguda*",
+    "hi": "📌 📄 *शिकायत की स्थिति*\n\n📅 तिथि: {date}\n🎫 संदर्भ संख्या: {refNumber}\n🏢 विभाग: {departmentName}\n📂 कार्यालय: {category}\n📊 स्थिति: 📋 *{status}*\n👤 किसे सौंपा गया: {assignedTo}\n\n📝 टिप्पणियाँ: {remarks}\n\n*आपकी शिकायत, हमारी प्राथमिकता।*\n*जिला प्रशासन, झारसुगुड़ा*",
+    "or": "📌 📄 *ଅଭିଯୋଗ ସ୍ଥିତି*\n\n📅 ତାରିଖ: {date}\n🎫 ରେଫରେନ୍ସ ନମ୍ବର: {refNumber}\n🏢 ବିଭାଗ: {departmentName}\n📂 ଅଫିସ୍: {category}\n📊 ସ୍ଥିତି: 📋 *{status}*\n👤 ଦାୟିତ୍ୱରେ: {assignedTo}\n\n📝 ମନ୍ତବ୍ୟ: {remarks}\n\n*ତୁମର ଅଭିଯୋଗ, ଆମର ପ୍ରାଥମିକତା।*\n*ଜିଲ୍ଲା ପ୍ରଶାସନ, ଝାରସୁଗୁଡା*"
   },
   "track_another": {
     "en": "🔍 Track Another",

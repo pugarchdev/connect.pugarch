@@ -80,8 +80,12 @@ export class NotificationContextService {
       created_at: createdAt,
       submitted_on: createdAt,
       reassigned_on: reassignedOn,
-      admin_name: options.admin?.fullName || (options.admin?.firstName ? `${options.admin.firstName}${options.admin.lastName ? ' ' + options.admin.lastName : ''}` : 'Officer'),
-      remarks: this.sanitizeText(options.remarks || grievance.remarks || 'N/A', 200),
+      admin_name: (() => {
+        const name = options.admin?.fullName || (options.admin?.firstName ? `${options.admin.firstName}${options.admin.lastName ? ' ' + options.admin.lastName : ''}`.trim() : 'Officer');
+        const designation = options.admin?.designation || (options.admin?.designations && options.admin.designations.length > 0 ? options.admin.designations[0] : null);
+        return designation ? `${name} (${designation})` : name;
+      })(),
+      remarks: this.sanitizeText(options.remarks || grievance.remarks || 'N/A', 1000),
       company_name: options.companyName || this.DEFAULT_PORTAL_NAME,
       current_date: moment().tz(timezone).format('DD MMM YYYY, hh:mm A'),
       previous_dept: options.previousDept || 'N/A',

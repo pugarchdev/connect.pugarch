@@ -1888,16 +1888,25 @@ export class DynamicFlowEngine {
           this.session.data.remarks =
             rawRemarks && rawRemarks.trim() !== "" ? rawRemarks : noRemarksMap[lang] || noRemarksMap.en;
           
+          let assignedToName = "Under Review";
           const assignee = (grievance as any).assignedTo;
+          
           if (assignee) {
             const name = `${assignee.firstName || ''} ${assignee.lastName || ''}`.trim();
             const designation = (assignee.designations && assignee.designations.length > 0) 
               ? ` (${assignee.designations[0]})` 
               : '';
-            this.session.data.assignedTo = `${name}${designation}` || "Under Review";
-          } else {
-            this.session.data.assignedTo = "Under Review";
+            assignedToName = `${name}${designation}`.trim() || "Under Review";
+          } else if (grievance.status === 'ASSIGNED' || grievance.status === 'IN_PROGRESS') {
+            // Fallback: Try to find the latest assignee from timeline if object is not populated/found
+            const assignmentEvent = [...(grievance.timeline || [])]
+              .reverse()
+              .find(e => e.action === 'ASSIGNED' && e.details?.toUserName);
+            if (assignmentEvent) {
+              assignedToName = assignmentEvent.details.toUserName;
+            }
           }
+          this.session.data.assignedTo = assignedToName;
 
           this.session.data.date = new Date(
             grievance.createdAt,

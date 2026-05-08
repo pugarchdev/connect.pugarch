@@ -360,8 +360,10 @@ await grievance.save();
           const lang = (grievance.language || 'en') as any;
           
           // Get the actual admin who performed the action
-          const adminUser = await User.findById(currentUser._id).select('firstName lastName').lean();
-          const adminName = adminUser ? `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim() : 'Administrator';
+          const adminUser = await User.findById(currentUser._id).select('firstName lastName designations').lean();
+          const adminName = adminUser 
+            ? `${adminUser.firstName || ''} ${adminUser.lastName || ''}${adminUser.designations?.[0] ? ` (${adminUser.designations[0]})` : ''}`.trim() 
+            : 'Administrator';
 
           notificationTasks.push(triggerCitizenStatusTemplate({
             companyId: resolvedCompanyId,
