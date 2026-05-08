@@ -130,7 +130,10 @@ router.put('/grievance/:id', requirePermission(Permission.STATUS_CHANGE_GRIEVANC
 
     const grievance = await Grievance.findById(req.params.id)
       .populate('companyId')
-      .populate('departmentId')
+      .populate({
+        path: 'departmentId',
+        populate: { path: 'parentDepartmentId' }
+      })
       .populate('subDepartmentId');
 
     if (!grievance) {
@@ -371,8 +374,17 @@ await grievance.save();
             citizenName: grievance.citizenName,
             citizenPhone: grievance.citizenPhone,
             language: grievance.language,
-            departmentName: grievance.departmentId ? getLocalizedDepartmentName(grievance.departmentId, lang) : 'N/A',
-            subDepartmentName: grievance.subDepartmentId ? getLocalizedDepartmentName(grievance.subDepartmentId, lang) : 'N/A',
+            departmentName: (() => {
+              const dept = grievance.departmentId as any;
+              if (dept?.parentDepartmentId) return getLocalizedDepartmentName(dept.parentDepartmentId, lang);
+              return dept ? getLocalizedDepartmentName(dept, lang) : 'N/A';
+            })(),
+            subDepartmentName: (() => {
+              if (grievance.subDepartmentId) return getLocalizedDepartmentName(grievance.subDepartmentId, lang);
+              const dept = grievance.departmentId as any;
+              if (dept?.parentDepartmentId) return getLocalizedDepartmentName(dept, lang);
+              return 'N/A';
+            })(),
             grievanceSummary: grievance.description,
             status,
             remarks: remarks || undefined,

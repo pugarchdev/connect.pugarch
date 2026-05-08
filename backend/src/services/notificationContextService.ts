@@ -74,8 +74,28 @@ export class NotificationContextService {
       citizen_name: grievance.citizenName || 'Citizen',
       citizen_phone: grievance.citizenPhone || 'N/A',
       status: this.formatStatus(grievance.status, lang),
-      department: options.department?.name || options.department || grievance.departmentId?.name || grievance.category || 'N/A',
-      office: options.subDept?.name || options.subDept || grievance.subDepartmentId?.name || 'N/A',
+      department: (() => {
+        if (options.department?.name) return options.department.name;
+        if (typeof options.department === 'string' && options.department !== '') return options.department;
+        
+        // Hierarchical logic: if departmentId has a parent, the parent is the true Department
+        const deptObj = grievance.departmentId as any;
+        if (deptObj?.parentDepartmentId?.name) return deptObj.parentDepartmentId.name;
+        
+        return deptObj?.name || grievance.category || 'N/A';
+      })(),
+      office: (() => {
+        if (options.subDept?.name) return options.subDept.name;
+        if (typeof options.subDept === 'string' && options.subDept !== '') return options.subDept;
+        
+        if ((grievance.subDepartmentId as any)?.name) return (grievance.subDepartmentId as any).name;
+        
+        // If departmentId itself has a parent, then departmentId is actually the Office
+        const deptObj = grievance.departmentId as any;
+        if (deptObj?.parentDepartmentId) return deptObj.name;
+        
+        return 'N/A';
+      })(),
       description: this.sanitizeText(grievance.description || 'N/A', 400),
       created_at: createdAt,
       submitted_on: createdAt,

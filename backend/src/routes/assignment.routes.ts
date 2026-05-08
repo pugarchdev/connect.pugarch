@@ -60,12 +60,20 @@ router.put('/grievance/:id/assign', requirePermission(Permission.UPDATE_GRIEVANC
       // It's a valid MongoDB ObjectId
       grievance = await Grievance.findById(req.params.id)
         .populate('companyId')
-        .populate('departmentId');
+        .populate({
+          path: 'departmentId',
+          populate: { path: 'parentDepartmentId' }
+        })
+        .populate('subDepartmentId');
     } else {
       // It's a grievanceId string (e.g., "GRV00000002")
       grievance = await Grievance.findOne({ grievanceId: req.params.id })
         .populate('companyId')
-        .populate('departmentId');
+        .populate({
+          path: 'departmentId',
+          populate: { path: 'parentDepartmentId' }
+        })
+        .populate('subDepartmentId');
     }
 
     if (!grievance) {
@@ -148,16 +156,23 @@ router.put('/grievance/:id/assign', requirePermission(Permission.UPDATE_GRIEVANC
     const oldDepartmentId = grievance.departmentId?._id;
 
     // Capture OLD dept names BEFORE any department auto-update below
-    const [oldDeptDoc, oldSubDeptDoc] = await Promise.all([
-      grievance.departmentId
-        ? (await import('../models/Department')).default.findById(grievance.departmentId).select('name')
-        : Promise.resolve(null),
-      grievance.subDepartmentId
-        ? (await import('../models/Department')).default.findById(grievance.subDepartmentId).select('name')
-        : Promise.resolve(null)
-    ]);
-    const previousDepartmentName = oldDeptDoc?.name || grievance.category || 'N/A';
-    const previousOfficeName = oldSubDeptDoc?.name || oldDeptDoc?.name || 'N/A';
+    const oldDeptDoc = grievance.departmentId as any;
+    const oldSubDeptDoc = grievance.subDepartmentId as any;
+
+    let previousDepartmentName = 'N/A';
+    let previousOfficeName = 'N/A';
+
+    if (oldDeptDoc) {
+      if (oldDeptDoc.parentDepartmentId) {
+        previousDepartmentName = oldDeptDoc.parentDepartmentId.name || 'N/A';
+        previousOfficeName = oldDeptDoc.name || 'N/A';
+      } else {
+        previousDepartmentName = oldDeptDoc.name || 'N/A';
+        previousOfficeName = oldSubDeptDoc?.name || (grievance.category !== oldDeptDoc.name ? grievance.category : 'N/A') || 'N/A';
+      }
+    } else {
+      previousDepartmentName = grievance.category || 'N/A';
+    }
 
     const isReassignment = Boolean(oldAssignedTo);
     // Reassignment template (cross-dept, done by company admin / super admin)
@@ -229,13 +244,26 @@ router.put('/grievance/:id/assign', requirePermission(Permission.UPDATE_GRIEVANC
 
     // Fetch NEW dept names (post-save, after any auto-update) for the template
     const [finalDept, finalSubDept] = await Promise.all([
-      (await import('../models/Department')).default.findById(grievance.departmentId).select('name'),
+      (await import('../models/Department')).default.findById(grievance.departmentId).populate('parentDepartmentId').lean(),
       grievance.subDepartmentId
-        ? (await import('../models/Department')).default.findById(grievance.subDepartmentId).select('name')
+        ? (await import('../models/Department')).default.findById(grievance.subDepartmentId).lean()
         : Promise.resolve(null)
     ]);
-    const newDepartmentName = finalDept?.name || grievance.category || 'Collector & DM';
-    const newOfficeName = finalSubDept?.name || finalDept?.name || 'N/A';
+
+    let newDepartmentName = 'N/A';
+    let newOfficeName = 'N/A';
+
+    if (finalDept) {
+      if ((finalDept as any).parentDepartmentId) {
+        newDepartmentName = (finalDept as any).parentDepartmentId.name || 'N/A';
+        newOfficeName = (finalDept as any).name || 'N/A';
+      } else {
+        newDepartmentName = (finalDept as any).name || 'N/A';
+        newOfficeName = (finalSubDept as any)?.name || (grievance.category !== (finalDept as any).name ? grievance.category : 'N/A') || 'N/A';
+      }
+    } else {
+      newDepartmentName = grievance.category || 'Collector & DM';
+    }
 
     // useReassignedTemplate: company admin / super admin doing a cross-dept reassignment
     // otherwise: dept admin delegating within dept → use assigned template

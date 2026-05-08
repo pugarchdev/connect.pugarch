@@ -1872,7 +1872,12 @@ export class DynamicFlowEngine {
         
         const grievance = await Grievance.findOne(query)
           .populate("assignedTo", "firstName lastName designations")
-          .populate("departmentId", "name nameHi nameOr nameMr");
+          .populate({
+            path: "departmentId",
+            select: "name nameHi nameOr nameMr parentDepartmentId",
+            populate: { path: "parentDepartmentId", select: "name nameHi nameOr nameMr" }
+          })
+          .populate("subDepartmentId", "name nameHi nameOr nameMr");
 
         if (grievance) {
           console.log(`✅ Found Grievance: ${grievance.grievanceId} (Status: ${grievance.status})`);
@@ -1913,17 +1918,45 @@ export class DynamicFlowEngine {
           ).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
 
           const dept = (grievance as any).departmentId;
+          const subDept = (grievance as any).subDepartmentId;
+          
+          let displayDept = "General";
+          let displayOffice = (grievance as any).category || "General";
+
+          const getLocaleName = (obj: any, language: string) => {
+            if (!obj) return null;
+            if (language === "hi" && obj.nameHi) return obj.nameHi;
+            if (language === "or" && obj.nameOr) return obj.nameOr;
+            if (language === "mr" && obj.nameMr) return obj.nameMr;
+            return obj.name;
+          };
+
           if (dept) {
-            let localeDeptName = dept.name;
-            if (lang === "hi" && dept.nameHi) localeDeptName = dept.nameHi;
-            if (lang === "or" && dept.nameOr) localeDeptName = dept.nameOr;
-            if (lang === "mr" && dept.nameMr) localeDeptName = dept.nameMr;
-            this.session.data.departmentName = localeDeptName || "General";
-          } else {
-            this.session.data.departmentName = "General";
+            // Case 1: Hierarchical Department (Current dept is a sub-unit of a larger parent)
+            if (dept.parentDepartmentId) {
+              displayDept = getLocaleName(dept.parentDepartmentId, lang) || "General";
+              displayOffice = getLocaleName(dept, lang) || "General";
+            } else {
+              // Case 2: Standard Department
+              displayDept = getLocaleName(dept, lang) || "General";
+              
+              // Resolve Office (Sub-Department)
+              if (subDept) {
+                displayOffice = getLocaleName(subDept, lang) || "General";
+              } else {
+                // Fallback to category string, but avoid duplicating the department name
+                const rawCategory = (grievance as any).category;
+                if (!rawCategory || rawCategory.trim() === "" || rawCategory === dept.name) {
+                  displayOffice = "General";
+                } else {
+                  displayOffice = rawCategory;
+                }
+              }
+            }
           }
           
-          this.session.data.category = (grievance as any).category || "General";
+          this.session.data.departmentName = displayDept;
+          this.session.data.category = displayOffice;
           this.session.data.serviceType = "Grievance";
           this.session.data.updatedAt = new Date(
             grievance.updatedAt || grievance.createdAt,
