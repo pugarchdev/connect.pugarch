@@ -74,7 +74,7 @@ export default function RevertGrievanceDialog({
               <Undo2 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm">Request Reassignment</h3>
+              <h3 className="text-white font-bold text-sm">Revert </h3>
               <p className="text-[14px] text-slate-400 uppercase tracking-widest font-semibold">
                 {`Send request to ${adminLabel}`}
               </p>
@@ -93,7 +93,7 @@ export default function RevertGrievanceDialog({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="block text-[14px] font-black text-slate-500 uppercase tracking-wider mb-1 px-1">Target Department <span className="text-slate-400 normal-case">(optional)</span></label>
+              <label className="block text-[14px] font-black text-slate-500 uppercase tracking-wider mb-1 px-1">Suggested Dept <span className="text-slate-400 normal-case">(optional)</span></label>
               <SearchableSelect
                 options={mainDepartments.map(d => ({ value: d._id, label: d.name }))}
                 value={selectedMainDept}
@@ -106,7 +106,7 @@ export default function RevertGrievanceDialog({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="block text-[14px] font-black text-slate-500 uppercase tracking-wider mb-1 px-1">Sub Department <span className="text-slate-400 normal-case">(optional)</span></label>
+              <label className="block text-[14px] font-black text-slate-500 uppercase tracking-wider mb-1 px-1">Sub Dept <span className="text-slate-400 normal-case">(optional)</span></label>
               <SearchableSelect
                 disabled={!selectedMainDept}
                 options={subDepartments.map(d => ({ value: d._id, label: d.name }))}
@@ -119,7 +119,7 @@ export default function RevertGrievanceDialog({
 
           <div>
             <label className="block text-[14px] font-black text-slate-500 uppercase tracking-wider mb-2 flex justify-between items-center">
-              <span>Reason for Reassignment *</span>
+              <span>Reason for Revert *</span>
               <span className={`text-[14px] font-bold ${remarks.length > 100 ? 'text-rose-500' : 'text-slate-400'}`}>
                 {remarks.length}/100
               </span>
@@ -128,7 +128,7 @@ export default function RevertGrievanceDialog({
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
               rows={4}
-              placeholder="Explain why this grievance should be reassigned and which department/sub-department should handle it."
+              placeholder="Explain why this grievance should be reverted and which department/sub-department should handle it."
               className={`w-full bg-slate-50 border ${remarks.length > 100 ? 'border-rose-500 ring-1 ring-rose-500/20' : 'border-slate-200'} rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/50 transition-all resize-none`}
             />
             {remarks.length > 100 && (
