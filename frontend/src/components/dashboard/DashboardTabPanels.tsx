@@ -4043,10 +4043,10 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                               {(suggestedDeptId || suggestedSubDeptId) && (
                                                 <div className="bg-rose-50/50 border border-rose-100 rounded-lg p-2">
                                                   <div className="flex items-center gap-1 text-[14px] text-rose-500 font-black uppercase tracking-widest mb-1 opacity-70">
-                                                    <ArrowRightCircle className="w-2.5 h-2.5" /> Proposed Destination
+                                                    <ArrowRightCircle className="w-2.5 h-2.5" /> Suggested Dept
                                                   </div>
                                                   <span className="text-[14px] font-bold text-slate-900 leading-tight break-words whitespace-normal">
-                                                    {allDepartments?.find(d => d._id === (suggestedSubDeptId || suggestedDeptId))?.name || "Target Department"}
+                                                    {allDepartments?.find(d => d._id === (suggestedSubDeptId || suggestedDeptId))?.name || "Suggested Department"}
                                                   </span>
                                                 </div>
                                               )}
