@@ -58,3 +58,5 @@ uploads/
 
 # Credentials
 backend/gcs-service-account.json
+
+/graphify-out

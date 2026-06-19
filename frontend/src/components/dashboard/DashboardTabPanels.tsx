@@ -1427,9 +1427,9 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
               {/* Departments Tab - For Company Admin & Superadmin Drilldown */}
               {canSeeDepartmentsTab && (
                 <TabsContent value="departments" className="space-y-4">
-                  <Card className="rounded-xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+                  <Card className="rounded-xl border border-slate-200 shadow-sm bg-white">
                     <CardContent className="p-0">
-                      <div className="px-6 py-4 bg-slate-50/50 border-b border-slate-200 space-y-4">
+                      <div className="relative z-30 px-6 py-4 bg-slate-50/50 border-b border-slate-200 space-y-4 rounded-t-xl">
                         {/* Top Action Bar */}
                         <div className="mb-3 space-y-3">
                           <div className="flex items-stretch gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
@@ -2387,7 +2387,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                         </div>
 
                         {/* Footer info & Pagination */}
-                        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-xl">
                           <div className="text-[14px] font-bold text-slate-400 uppercase tracking-widest">
                             Showing{" "}
                             {(departmentPage - 1) *
@@ -2581,10 +2581,10 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
               {/* Users Tab Content */}
               {canSeeUsersTab && (
                 <TabsContent value="users" className="space-y-6">
-                  <Card className="rounded-xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+                  <Card className="rounded-xl border border-slate-200 shadow-sm bg-white">
                     <CardContent className="p-0">
                       <>
-                        <div className="px-4 py-4 sm:px-6 bg-slate-50/50 border-b border-slate-200 space-y-4">
+                        <div className="relative z-30 px-4 py-4 sm:px-6 bg-slate-50/50 border-b border-slate-200 space-y-4 rounded-t-xl">
                           <div className="md:hidden space-y-3">
                             <div className="flex items-stretch gap-2">
                               <div className="relative flex-1 min-w-0">
@@ -3556,9 +3556,9 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
               {hasModule(Module.GRIEVANCE) &&
                 (isViewingCompany || isDepartmentLevel) && (
                   <TabsContent value="grievances" className="space-y-4">
-                    <Card className="rounded-xl border border-slate-200 shadow-sm overflow-hidden bg-white">
+                    <Card className="rounded-xl border border-slate-200 shadow-sm bg-white">
                       {/* Grievance Filters */}
-                      <div className="px-4 sm:px-6 py-4 bg-slate-50/50 border-b border-slate-200">
+                      <div className="relative z-30 px-4 sm:px-6 py-4 bg-slate-50/50 border-b border-slate-200 rounded-t-xl">
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-3">
                           <div className="relative w-full lg:max-w-md">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />

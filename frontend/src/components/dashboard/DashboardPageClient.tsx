@@ -1101,10 +1101,15 @@ function DashboardPageClientContent() {
     status: deptFilters.status,
     mainDeptId: deptFilters.mainDeptId,
     subDeptId: deptFilters.subDeptId,
+    type: deptFilters.type,
     sortBy: sortConfig.tab === "departments" ? sortConfig.key : undefined,
     sortOrder: sortConfig.tab === "departments" ? (sortConfig.direction || undefined) : undefined,
     enabled: mounted && (visitedTabs.has("departments") || activeTab === "departments"),
   });
+
+  useEffect(() => {
+    setDepartmentPage(1);
+  }, [deptSearch, deptFilters, setDepartmentPage]);
 
   const { data: cachedUserData, isLoading: isLoadingUsersFromHook, refetch: refetchUsersHook } = useUsers({
     page: userPage,

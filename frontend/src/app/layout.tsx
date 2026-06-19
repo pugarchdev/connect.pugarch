@@ -4,6 +4,8 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { QueryProvider } from "@/lib/query/cache";
 import HealthGuard from "@/components/HealthGuard";
+import { Agentation } from "agentation";
+
 
 export const metadata: Metadata = {
   title: {
@@ -41,7 +43,10 @@ export default function RootLayout({
             </AuthProvider>
           </HealthGuard>
         </QueryProvider>
+                {process.env.NODE_ENV === "development" && <Agentation />}
+
       </body>
     </html>
+    
   );
 }
