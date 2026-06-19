@@ -461,7 +461,7 @@ export default function TransferWorkloadDialog({
                 Transfer Workload
               </DialogTitle>
               <DialogDescription className="text-[14px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                Reassign all pending grievances and appointments from this officer
+                Reassign all pending grievances from this officer
               </DialogDescription>
             </DialogHeader>
             <button
