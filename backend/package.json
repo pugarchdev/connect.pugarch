@@ -12,6 +12,7 @@
     "seed:superadmin": "ts-node src/scripts/seedSuperAdmin.ts",
     "seed:modules": "ts-node src/scripts/seedModules.ts",
     "sync:system": "ts-node src/scripts/syncSystem.ts",
+    "migrate:redis": "ts-node src/scripts/migrateRedis.ts",
     "test": "jest"
   },
   "keywords": [
