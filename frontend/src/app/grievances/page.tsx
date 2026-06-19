@@ -190,7 +190,7 @@ export default function GrievancesPage() {
     );
     const assigneeName =
       grievance.assignedTo && typeof grievance.assignedTo === "object"
-        ? `${grievance.assignedTo.firstName} ${grievance.assignedTo.lastName}`.trim()
+        ? `${(grievance.assignedTo as any).firstName || ""} ${(grievance.assignedTo as any).lastName || ""}`.trim() || "Inactive User"
         : "Not assigned";
     const departmentName =
       typeof grievance.departmentId === "object"
@@ -602,9 +602,9 @@ export default function GrievancesPage() {
                             <div className="flex items-center">
                               <UserPlus className="w-3.5 h-3.5 mr-1.5 text-green-600 shrink-0" />
                               <span className="text-sm font-semibold text-gray-900 break-words">
-                                {typeof grievance.assignedTo === "object"
-                                  ? `${grievance.assignedTo.firstName} ${grievance.assignedTo.lastName}`
-                                  : grievance.assignedTo}
+                                {typeof grievance.assignedTo === "object" && grievance.assignedTo
+                                  ? `${(grievance.assignedTo as any).firstName || ""} ${(grievance.assignedTo as any).lastName || ""}`.trim() || "Inactive User"
+                                  : (grievance.assignedTo as any)}
                               </span>
                             </div>
                             {grievance.assignedAt && (
@@ -749,9 +749,9 @@ export default function GrievancesPage() {
                             <div className="flex items-center">
                               <UserPlus className="w-3.5 h-3.5 mr-1.5 text-green-600" />
                               <span className="text-sm font-semibold text-gray-900">
-                                {typeof grievance.assignedTo === "object"
-                                  ? `${grievance.assignedTo.firstName} ${grievance.assignedTo.lastName}`
-                                  : grievance.assignedTo}
+                                {typeof grievance.assignedTo === "object" && grievance.assignedTo
+                                  ? `${(grievance.assignedTo as any).firstName || ""} ${(grievance.assignedTo as any).lastName || ""}`.trim() || "Inactive User"
+                                  : (grievance.assignedTo as any)}
                               </span>
                             </div>
                             {grievance.assignedAt && (

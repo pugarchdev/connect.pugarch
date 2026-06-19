@@ -543,9 +543,9 @@ export default function AppointmentsPage() {
                             <div className="flex items-center">
                               <UserPlus className="w-3.5 h-3.5 mr-1.5 text-green-600" />
                               <span className="text-sm font-semibold text-gray-900">
-                                {typeof appointment.assignedTo === "object"
-                                  ? `${appointment.assignedTo.firstName} ${appointment.assignedTo.lastName}`
-                                  : appointment.assignedTo}
+                                {typeof appointment.assignedTo === "object" && appointment.assignedTo
+                                  ? `${(appointment.assignedTo as any).firstName || ""} ${(appointment.assignedTo as any).lastName || ""}`.trim() || "Inactive User"
+                                  : (appointment.assignedTo as any)}
                               </span>
                             </div>
                           </div>

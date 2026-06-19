@@ -181,6 +181,7 @@ import {
   Workflow,
   LayoutGrid,
   Menu,
+  ArrowRightLeft,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -375,6 +376,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
     setShowDepartmentFiltersOnMobile,
     setShowDeptUsersDialog,
     setShowEditUserDialog,
+    setShowTransferWorkloadDialog,
+    setTransferWorkloadUser,
     setShowGrievanceAssignment,
     setShowGrievanceFiltersOnMobile,
     setShowGrievanceRevertDialog,
@@ -3424,6 +3427,24 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                                 }}
                                               >
                                                 <Edit2 className="w-4 h-4" />
+                                              </Button>
+                                            )}
+
+                                            {hasPermission(
+                                              user,
+                                              Permission.UPDATE_USER,
+                                            ) && (
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-colors flex-shrink-0"
+                                                title="Transfer Workload"
+                                                onClick={() => {
+                                                  setTransferWorkloadUser(u);
+                                                  setShowTransferWorkloadDialog(true);
+                                                }}
+                                              >
+                                                <ArrowRightLeft className="w-4 h-4" />
                                               </Button>
                                             )}
 

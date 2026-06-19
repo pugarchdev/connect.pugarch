@@ -682,7 +682,9 @@ export default function CitizenDetailsModal({
                         Assigned To
                       </p>
                       <p className="text-base font-bold text-slate-800">
-                        {data.assignedTo.firstName} {data.assignedTo.lastName}
+                        {typeof data.assignedTo === "object" && data.assignedTo
+                          ? `${(data.assignedTo as any).firstName || ""} ${(data.assignedTo as any).lastName || ""}`.trim() || "Inactive User"
+                          : String(data.assignedTo)}
                       </p>
                     </div>
                   )}

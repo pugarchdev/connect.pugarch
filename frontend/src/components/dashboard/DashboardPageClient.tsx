@@ -757,6 +757,8 @@ function DashboardPageClientContent() {
   const [showUserDialog, setShowUserDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [showTransferWorkloadDialog, setShowTransferWorkloadDialog] = useState(false);
+  const [transferWorkloadUser, setTransferWorkloadUser] = useState<User | null>(null);
   const [showChangePermissionsDialog, setShowChangePermissionsDialog] =
     useState(false);
   const [selectedUserForDetails, setSelectedUserForDetails] =
@@ -881,6 +883,7 @@ function DashboardPageClientContent() {
     showAppointmentStatusModal ||
     showGrievanceStatusModal ||
     showHierarchyDialog ||
+    showTransferWorkloadDialog ||
     confirmDialog.isOpen;
 
   // Pagination State
@@ -2937,10 +2940,10 @@ function DashboardPageClientContent() {
             g.citizenPhone,
             g.category,
             g.description,
-            typeof g.assignedTo === "object"
-              ? `${(g.assignedTo as any).firstName} ${(g.assignedTo as any).lastName}`
-              : g.assignedTo,
-            typeof g.assignedTo === "object" ? (g.assignedTo as any).email : "",
+            typeof g.assignedTo === "object" && g.assignedTo
+              ? `${(g.assignedTo as any).firstName || ""} ${(g.assignedTo as any).lastName || ""}`
+              : g.assignedTo || "",
+            typeof g.assignedTo === "object" && g.assignedTo ? (g.assignedTo as any).email || "" : "",
           ]
             .join(" ")
             .toLowerCase();
@@ -3020,10 +3023,10 @@ function DashboardPageClientContent() {
             a.citizenName,
             a.citizenPhone,
             a.purpose,
-            typeof a.assignedTo === "object"
-              ? `${(a.assignedTo as any).firstName} ${(a.assignedTo as any).lastName}`
-              : a.assignedTo,
-            typeof a.assignedTo === "object" ? (a.assignedTo as any).email : "",
+            typeof a.assignedTo === "object" && a.assignedTo
+              ? `${(a.assignedTo as any).firstName || ""} ${(a.assignedTo as any).lastName || ""}`
+              : a.assignedTo || "",
+            typeof a.assignedTo === "object" && a.assignedTo ? (a.assignedTo as any).email || "" : "",
           ]
             .join(" ")
             .toLowerCase();
@@ -3621,6 +3624,8 @@ function DashboardPageClientContent() {
                 setShowDepartmentFiltersOnMobile,
                 setShowDeptUsersDialog,
                 setShowEditUserDialog,
+                setShowTransferWorkloadDialog,
+                setTransferWorkloadUser,
                 setShowGrievanceAssignment,
                 setShowGrievanceFiltersOnMobile,
                 setShowGrievanceRevertDialog,
@@ -3678,6 +3683,10 @@ function DashboardPageClientContent() {
               setShowEditUserDialog,
               editingUser,
               setEditingUser,
+              showTransferWorkloadDialog,
+              setShowTransferWorkloadDialog,
+              transferWorkloadUser,
+              setTransferWorkloadUser,
               showChangePermissionsDialog,
               setShowChangePermissionsDialog,
               showGrievanceDetail,
