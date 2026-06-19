@@ -229,7 +229,7 @@ export function DashboardDialogs({ visible, props }: DashboardDialogsProps) {
                   <p className="font-semibold text-slate-900">
                     {selectedGrievanceForReminder.assignedTo &&
                     typeof selectedGrievanceForReminder.assignedTo === "object"
-                      ? `${selectedGrievanceForReminder.assignedTo.firstName} ${selectedGrievanceForReminder.assignedTo.lastName}`
+                      ? `${(selectedGrievanceForReminder.assignedTo as any).firstName || ""} ${(selectedGrievanceForReminder.assignedTo as any).lastName || ""}`.trim() || "Inactive User"
                       : "Not assigned"}
                   </p>
                 </div>

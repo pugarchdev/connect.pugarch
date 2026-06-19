@@ -1217,6 +1217,36 @@ router.delete('/:id', requirePermission(Permission.DELETE_USER), async (req: Req
         });
       }
     }
+    // 3. Workload Check: Ensure user has no active grievances or appointments assigned
+    const Grievance = (await import('../models/Grievance')).default;
+    const Appointment = (await import('../models/Appointment')).default;
+
+    const [activeGrievanceCount, activeAppointmentCount] = await Promise.all([
+      Grievance.countDocuments({
+        assignedTo: existingUser._id,
+        status: { $in: ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'REVERTED'] }
+      }),
+      Appointment.countDocuments({
+        assignedTo: existingUser._id,
+        status: { $in: ['REQUESTED', 'SCHEDULED', 'CONFIRMED'] }
+      })
+    ]);
+
+    if (activeGrievanceCount > 0 || activeAppointmentCount > 0) {
+      const reasons: string[] = [];
+      if (activeGrievanceCount > 0) {
+        reasons.push(`${activeGrievanceCount} open/assigned grievance(s)`);
+      }
+      if (activeAppointmentCount > 0) {
+        reasons.push(`${activeAppointmentCount} pending appointment(s)`);
+      }
+
+      res.status(400).json({
+        success: false,
+        message: `This user cannot be deleted because they are currently assigned to ${reasons.join(' and ')}. To prevent data loss: 1) Reassign these active items to someone else, or 2) Deactivate this account instead of deleting it.`
+      });
+      return;
+    }
 
     const user = await User.findByIdAndDelete(req.params.id);
 
