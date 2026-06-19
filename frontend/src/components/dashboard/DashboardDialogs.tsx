@@ -6,6 +6,7 @@ import DepartmentUsersDialog from "@/components/department/DepartmentUsersDialog
 import DepartmentHierarchyDialog from "@/components/department/DepartmentHierarchyDialog";
 import CreateUserDialog from "@/components/user/CreateUserDialog";
 import EditUserDialog from "@/components/user/EditUserDialog";
+import TransferWorkloadDialog from "@/components/user/TransferWorkloadDialog";
 import ChangePermissionsDialog from "@/components/user/ChangePermissionsDialog";
 import UserDetailsDialog from "@/components/user/UserDetailsDialog";
 import GrievanceDetailDialog from "@/components/grievance/GrievanceDetailDialog";
@@ -43,6 +44,10 @@ export function DashboardDialogs({ visible, props }: DashboardDialogsProps) {
     setShowEditUserDialog,
     editingUser,
     setEditingUser,
+    showTransferWorkloadDialog,
+    setShowTransferWorkloadDialog,
+    transferWorkloadUser,
+    setTransferWorkloadUser,
     showChangePermissionsDialog,
     setShowChangePermissionsDialog,
     showGrievanceDetail,
@@ -169,6 +174,18 @@ export function DashboardDialogs({ visible, props }: DashboardDialogsProps) {
           user={editingUser}
         />
 
+        <TransferWorkloadDialog
+          isOpen={showTransferWorkloadDialog}
+          onClose={() => {
+            setShowTransferWorkloadDialog(false);
+            setTransferWorkloadUser(null);
+          }}
+          onSuccess={() => {
+            fetchUsers(userPage, true);
+            fetchDashboardData(true);
+          }}
+          sourceUser={transferWorkloadUser}
+        />
         <ChangePermissionsDialog
           isOpen={showChangePermissionsDialog}
           onClose={() => {

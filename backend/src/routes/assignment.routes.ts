@@ -611,4 +611,218 @@ router.get('/users/available', async (req: Request, res: Response) => {
   }
 });
 
+// @route   POST /api/assignments/transfer-workload
+// @desc    Bulk transfer all active grievances and appointments from one user to another
+// @access  Private
+router.post('/transfer-workload', requirePermission(Permission.UPDATE_GRIEVANCE), async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user!;
+    const { sourceUserId, targetUserId, remarks } = req.body;
+
+    if (!sourceUserId || !targetUserId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both source user ID and target user ID are required'
+      });
+    }
+
+    if (String(sourceUserId) === String(targetUserId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Source user and target user cannot be the same'
+      });
+    }
+
+    // 1. Fetch both users
+    const [sourceUser, targetUser] = await Promise.all([
+      User.findById(sourceUserId),
+      User.findById(targetUserId)
+    ]);
+
+    if (!sourceUser) {
+      return res.status(404).json({ success: false, message: 'Source user not found' });
+    }
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'Target user not found' });
+    }
+
+    // 2. Validate tenant (company) alignment
+    if (!currentUser.isSuperAdmin) {
+      if (sourceUser.companyId?.toString() !== currentUser.companyId?.toString() ||
+          targetUser.companyId?.toString() !== currentUser.companyId?.toString()) {
+        return res.status(403).json({ success: false, message: 'Access denied: Users must belong to your company' });
+      }
+    }
+
+    const { AppointmentStatus } = await import('../config/constants');
+
+    // 3. Find active items
+    const [activeGrievances, activeAppointments] = await Promise.all([
+      Grievance.find({
+        assignedTo: sourceUser._id,
+        status: { $in: ['PENDING', 'ASSIGNED', 'IN_PROGRESS', 'REVERTED'] }
+      }),
+      Appointment.find({
+        assignedTo: sourceUser._id,
+        status: { $in: ['REQUESTED', 'SCHEDULED', 'CONFIRMED'] }
+      })
+    ]);
+
+    const grievanceTransferCount = activeGrievances.length;
+    const appointmentTransferCount = activeAppointments.length;
+
+    if (grievanceTransferCount === 0 && appointmentTransferCount === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No active workloads (grievances or appointments) found for the source user to transfer.',
+        data: { grievancesTransferred: 0, appointmentsTransferred: 0 }
+      });
+    }
+
+    const transferReason = remarks || 'Administrative Workload Transfer';
+
+    // 4. Reassign Grievances (reusing routing/history update logic)
+    const Department = (await import('../models/Department')).default;
+    const targetDeptId = targetUser.departmentId; // Virtual field resolves to first dept
+
+    let targetDeptDoc: any = null;
+    if (targetDeptId) {
+      targetDeptDoc = await Department.findById(targetDeptId).select('_id name parentDepartmentId');
+    }
+
+    const finalDeptId = targetDeptDoc ? (targetDeptDoc.parentDepartmentId ? targetDeptDoc.parentDepartmentId : targetDeptDoc._id) : undefined;
+    const finalSubDeptId = targetDeptDoc ? (targetDeptDoc.parentDepartmentId ? targetDeptDoc._id : undefined) : undefined;
+
+    // Process Grievance transfers
+    for (const grievance of activeGrievances) {
+      const oldAssignedTo = grievance.assignedTo;
+      const oldDepartmentId = grievance.departmentId;
+
+      grievance.assignedTo = targetUser._id;
+      grievance.assignedAt = new Date();
+      grievance.status = GrievanceStatus.ASSIGNED;
+
+      // Sync department if the new user is mapped to a department
+      if (finalDeptId) {
+        if (!oldDepartmentId || oldDepartmentId.toString() !== finalDeptId.toString()) {
+          grievance.departmentId = finalDeptId as any;
+          grievance.subDepartmentId = finalSubDeptId as any;
+
+          grievance.timeline.push({
+            action: 'DEPARTMENT_TRANSFER',
+            details: {
+              fromDepartmentId: oldDepartmentId,
+              toDepartmentId: finalDeptId,
+              toSubDepartmentId: finalSubDeptId || null,
+              reason: 'Auto-updated during bulk workload transfer'
+            },
+            performedBy: currentUser._id,
+            timestamp: new Date()
+          });
+        }
+      }
+
+      grievance.timeline.push({
+        action: 'ASSIGNED',
+        details: {
+          fromUserId: oldAssignedTo,
+          toUserId: targetUser._id,
+          toUserName: targetUser.getFullName(),
+          reason: transferReason
+        },
+        performedBy: currentUser._id,
+        timestamp: new Date()
+      });
+
+      await grievance.save();
+      // Per-item notifications removed — consolidated notification sent after all transfers
+    }
+
+    // Process Appointment transfers
+    for (const appointment of activeAppointments) {
+      const oldAssignedTo = appointment.assignedTo;
+
+      appointment.assignedTo = targetUser._id;
+      appointment.assignedAt = new Date();
+
+      appointment.timeline.push({
+        action: 'ASSIGNED',
+        details: {
+          fromUserId: oldAssignedTo,
+          toUserId: targetUser._id,
+          toUserName: targetUser.getFullName(),
+          reason: transferReason
+        },
+        performedBy: currentUser._id,
+        timestamp: new Date()
+      });
+
+      await appointment.save();
+      // Per-item notifications removed — consolidated notification sent after all transfers
+    }
+
+    // ── Send ONE consolidated in-app notification to the target user ──
+    try {
+      const { notifyUser } = await import('../services/inAppNotificationService');
+
+      const parts: string[] = [];
+      if (grievanceTransferCount > 0) {
+        parts.push(`${grievanceTransferCount} grievance${grievanceTransferCount > 1 ? 's' : ''}`);
+      }
+      if (appointmentTransferCount > 0) {
+        parts.push(`${appointmentTransferCount} appointment${appointmentTransferCount > 1 ? 's' : ''}`);
+      }
+      const itemsSummary = parts.join(' and ');
+
+      await notifyUser({
+        userId: targetUser._id,
+        companyId: targetUser.companyId || currentUser.companyId!,
+        eventType: 'GRIEVANCE_ASSIGNED',
+        title: 'Workload Transferred to You',
+        message: `${itemsSummary} transferred to you from ${sourceUser.getFullName()} by ${currentUser.getFullName()}. Reason: ${transferReason}`,
+        meta: {
+          bulkTransfer: true,
+          grievancesCount: grievanceTransferCount,
+          appointmentsCount: appointmentTransferCount,
+          sourceUserId: sourceUser._id,
+          sourceUserName: sourceUser.getFullName(),
+          remarks: transferReason
+        }
+      });
+    } catch (notifErr) {
+      console.error('Failed to send consolidated bulk-transfer in-app notification:', notifErr);
+    }
+
+    // Log overall transfer action
+    logUserAction(
+      req,
+      AuditAction.UPDATE,
+      'User',
+      sourceUserId,
+      {
+        action: 'bulk_transfer_workload',
+        toUserId: targetUserId,
+        grievancesCount: grievanceTransferCount,
+        appointmentsCount: appointmentTransferCount,
+        remarks: transferReason
+      }
+    ).catch((err) => console.error('Failed to log audit action:', err));
+
+    res.json({
+      success: true,
+      message: `Successfully transferred ${grievanceTransferCount} active grievance(s) and ${appointmentTransferCount} pending appointment(s) from ${sourceUser.getFullName()} to ${targetUser.getFullName()}.`,
+      data: {
+        grievancesTransferred: grievanceTransferCount,
+        appointmentsTransferred: appointmentTransferCount
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to bulk transfer workload',
+      error: error.message
+    });
+  }
+});
+
 export default router;
