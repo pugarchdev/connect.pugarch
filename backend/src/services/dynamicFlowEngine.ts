@@ -804,6 +804,8 @@ export class DynamicFlowEngine {
     if (!message || message.trim() === "") {
       console.warn(`⚠️ Skipping empty message for step ${step.stepId}`);
       this.session.data.currentStepId = step.stepId;
+      this.session.data.listMapping = {};
+      this.session.data.buttonMapping = {};
       await updateSession(this.session);
       await this.runNextStepIfDifferent(step.nextStepId, step.stepId);
       return;
@@ -823,6 +825,8 @@ export class DynamicFlowEngine {
     if (isPhotoUploadPrompt && step.nextStepId) {
       await sendWhatsAppMessage(this.company, this.userPhone, message);
       this.session.data.currentStepId = step.stepId;
+      this.session.data.listMapping = {};
+      this.session.data.buttonMapping = {};
       this.session.data.awaitingMedia = {
         mediaType: "image",
         optional: true,
@@ -835,6 +839,8 @@ export class DynamicFlowEngine {
 
     await sendWhatsAppMessage(this.company, this.userPhone, message);
     this.session.data.currentStepId = step.stepId;
+    this.session.data.listMapping = {};
+    this.session.data.buttonMapping = {};
     await updateSession(this.session);
     await this.runNextStepIfDifferent(step.nextStepId, step.stepId);
   }
@@ -1008,6 +1014,7 @@ export class DynamicFlowEngine {
 
     // Save button step info to session for handling response
     this.session.data.currentStepId = step.stepId;
+    this.session.data.listMapping = {};
     this.session.data.buttonMapping = {};
     step.buttons.forEach((btn) => {
       const nextId = btn.nextStepId || this.resolveNextStepId(step.stepId, btn.id);
@@ -1059,6 +1066,7 @@ export class DynamicFlowEngine {
 
     this.session.data.currentStepId = step.stepId;
     this.session.data.listMapping = {};
+    this.session.data.buttonMapping = {};
     translatedSections.forEach((section) => {
       section.rows.forEach((row) => {
         const nextId = row.nextStepId || this.resolveNextStepId(step.stepId, row.id);
@@ -1304,6 +1312,8 @@ export class DynamicFlowEngine {
       await sendWhatsAppMessage(this.company, this.userPhone, message);
 
       this.session.data.currentStepId = step.stepId;
+      this.session.data.listMapping = {};
+      this.session.data.buttonMapping = {};
       if (isMediaInput) {
         // Wait for actual media (or skip); do not advance on text
         // 'file' type maps to 'document' for WhatsApp media handling
