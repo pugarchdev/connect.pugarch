@@ -1666,7 +1666,13 @@ router.post('/:id/reminder', requirePermission(Permission.UPDATE_GRIEVANCE), asy
     });
 
     // ✅ Trigger In-App Notification for Hierarchy (Sub-Dept, Dept, and Company Admins)
-    const targetDeptId = grievance.subDepartmentId || grievance.departmentId;
+    // Extract raw ObjectId from potentially populated fields to avoid passing full document objects
+    const targetDeptId = (grievance.subDepartmentId && typeof grievance.subDepartmentId === 'object' && (grievance.subDepartmentId as any)._id)
+      ? (grievance.subDepartmentId as any)._id
+      : grievance.subDepartmentId
+        || (grievance.departmentId && typeof grievance.departmentId === 'object' && (grievance.departmentId as any)._id)
+          ? (grievance.departmentId as any)._id
+          : grievance.departmentId;
     if (targetDeptId) {
       const { notifyDepartmentAdmins } = await import('../services/inAppNotificationService');
       await notifyDepartmentAdmins({
@@ -1699,7 +1705,14 @@ router.post('/:id/reminder', requirePermission(Permission.UPDATE_GRIEVANCE), asy
     const assignedUser = grievance.assignedTo && typeof grievance.assignedTo === 'object'
       ? grievance.assignedTo as any
       : null;
-    const hierarchyAdmins = await getHierarchicalDepartmentAdmins(grievance.subDepartmentId || grievance.departmentId);
+    // Extract raw ObjectId from populated fields for reliable department hierarchy lookup
+    const hierarchyDeptId = (grievance.subDepartmentId && typeof grievance.subDepartmentId === 'object' && (grievance.subDepartmentId as any)._id)
+      ? (grievance.subDepartmentId as any)._id
+      : grievance.subDepartmentId
+        || (grievance.departmentId && typeof grievance.departmentId === 'object' && (grievance.departmentId as any)._id)
+          ? (grievance.departmentId as any)._id
+          : grievance.departmentId;
+    const hierarchyAdmins = await getHierarchicalDepartmentAdmins(hierarchyDeptId);
     const recipientPhones = Array.from(new Set([
       normalizePhoneNumber(assignedUser?.phone),
       ...hierarchyAdmins.map((admin: any) => normalizePhoneNumber(admin?.phone))
@@ -1742,30 +1755,7 @@ router.post('/:id/reminder', requirePermission(Permission.UPDATE_GRIEVANCE), asy
             submittedOn: grievance.createdAt
           });
 
-          // ✅ Send Media for each recipient with their personalized name
-          const grievanceMedia = (grievance.media || []).map((file: any) => ({
-            url: file.url,
-            type: file.type,
-            caption: `Evidence for grievance ${grievance.grievanceId}`
-          }));
-
-          if (grievanceMedia.length > 0) {
-            const config = await CompanyWhatsAppConfig.findOne({ companyId: grievance.companyId, isActive: true }).lean();
-            const company = await Company.findById(grievance.companyId).lean();
-            if (config && company) {
-              const companyPayload = {
-                ...company,
-                _id: grievance.companyId,
-                whatsappConfig: {
-                  phoneNumberId: config.phoneNumberId,
-                  accessToken: config.accessToken,
-                  businessAccountId: config.businessAccountId,
-                  rateLimits: config.rateLimits
-                }
-              };
-              await sendMediaSequentially(companyPayload, phone, grievanceMedia as any, recipientName);
-            }
-          }
+          // Media is already sent by triggerGrievanceEvent internally via sendMediaSequentially
           return;
         })
       );

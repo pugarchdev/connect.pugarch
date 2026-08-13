@@ -1221,7 +1221,7 @@ export async function getHierarchicalDepartmentAdmins(
                       $regex: /grievance|appointment|user_management/i,
                     },
                     actions: {
-                      $in: ["all", "manage", "assign", "status_change", "view"],
+                      $in: ["all", "manage", "assign", "status_change"],
                     },
                   },
                 },

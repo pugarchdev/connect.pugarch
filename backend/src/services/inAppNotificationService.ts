@@ -165,9 +165,22 @@ export async function notifyDepartmentAdmins(options: {
             { level: 1 },
             { role: 'COMPANY_ADMIN' },
             {
-              $or: [
-                { departmentId: { $in: deptObjectIds } },
-                { departmentIds: { $in: deptObjectIds } }
+              // Department-level users must ALSO have an admin role
+              $and: [
+                {
+                  $or: [
+                    { departmentId: { $in: deptObjectIds } },
+                    { departmentIds: { $in: deptObjectIds } }
+                  ]
+                },
+                {
+                  $or: [
+                    { 'roleInfo.key': { $regex: /ADMIN|HEAD|HOD/i } },
+                    { 'roleInfo.name': { $regex: /admin|head|hod|tahasildar|officer/i } },
+                    { level: { $lte: 3 } },
+                    { role: { $in: ['DEPARTMENT_ADMIN', 'SUB_DEPARTMENT_ADMIN'] } }
+                  ]
+                }
               ]
             }
           ]
