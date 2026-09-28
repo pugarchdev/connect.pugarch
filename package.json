@@ -1,5 +1,21 @@
 {
+  "name": "connect-pugarch",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n \"backend,frontend\" -c \"blue.bold,cyan.bold\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "concurrently -n \"backend,frontend\" -c \"blue.bold,cyan.bold\" \"npm run build:backend\" \"npm run build:frontend\"",
+    "build:backend": "npm run build --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "start": "concurrently -n \"backend,frontend\" -c \"blue.bold,cyan.bold\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "npm run start --prefix backend",
+    "start:frontend": "npm run start --prefix frontend",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
+  },
   "devDependencies": {
-    "agentation": "^3.0.2"
+    "agentation": "^3.0.2",
+    "concurrently": "^9.2.4"
   }
 }
