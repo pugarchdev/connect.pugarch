@@ -246,12 +246,14 @@ export async function getSessionComplianceContext(
   }
 
   const normalizedTo = normalizePhoneNumber(to);
+  const rawDigits = to.replace(/\D/g, '');
+  const tenDigits = rawDigits.slice(-10);
 
   // 👑 Priority 1: Check if this is an internal User (Admin/Staff)
   // Internal users are considered to have given consent if they are active and haven't disabled WhatsApp.
   const internalUser = await User.findOne({
     companyId,
-    phone: normalizedTo,
+    phone: { $in: [normalizedTo, tenDigits, rawDigits] },
     isActive: true
   }).select('notificationSettings').lean();
 

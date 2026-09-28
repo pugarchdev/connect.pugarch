@@ -3298,6 +3298,7 @@ function DashboardPageClientContent() {
         "overview",
         "analytics",
         "grievances",
+        "defaulters",
         "appointments",
         "departments",
         "users",
@@ -3316,6 +3317,7 @@ function DashboardPageClientContent() {
         "overview",
         "analytics",
         "grievances",
+        "defaulters",
         "appointments",
         "departments",
         "users",
@@ -3328,6 +3330,7 @@ function DashboardPageClientContent() {
         "overview",
         "analytics",
         "grievances",
+        "defaulters",
         "departments",
         "users",
         "profile",
@@ -3340,11 +3343,12 @@ function DashboardPageClientContent() {
               "overview",
               "analytics",
               "grievances",
+              "defaulters",
               "departments",
               "users",
               "profile",
             ]
-          : ["overview", "analytics", "grievances", "users", "profile"],
+          : ["overview", "analytics", "grievances", "defaulters", "users", "profile"],
       );
     }
     if (isOperatorRole) {

@@ -173,5 +173,92 @@ export const grievanceAPI = {
 
   updateSla: async (id: string, slaHours: number): Promise<{ success: boolean; data: { grievance: Grievance }; message: string }> => {
     return apiClient.put(`/grievances/${id}/sla`, { slaHours });
+  },
+
+  getDefaulters: async (params?: { minReminders?: number; departmentId?: string; search?: string; sortBy?: string }): Promise<{
+    success: boolean;
+    data: {
+      totalDefaulterOfficers: number;
+      totalNeglectedGrievances: number;
+      criticalOfficersCount?: number;
+      criticalGrievancesCount?: number;
+      worstDepartment: string;
+      minReminders: number;
+      defaulters: DefaulterOfficer[];
+    };
+  }> => {
+    return apiClient.get('/grievances/defaulters', { params });
+  },
+
+  exportDefaultersCsvUrl: (minReminders: number = 2): string => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${baseUrl}/grievances/defaulters/export?minReminders=${minReminders}${tokenParam}`;
+  },
+
+  exportDefaultersCsv: async (minReminders: number = 2): Promise<void> => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
+    const response = await fetch(`${baseUrl}/grievances/defaulters/export?minReminders=${minReminders}`, {
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => null);
+      throw new Error(err?.message || 'Failed to export defaulters report');
+    }
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `defaulter-officers-report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    document.body.removeChild(a);
+  },
+
+  sendShowCauseNotice: async (officerId: string, remarks?: string): Promise<{ success: boolean; message: string }> => {
+    return apiClient.post(`/grievances/defaulters/${officerId}/show-cause`, { remarks });
+  },
+
+  triggerSlaCronScan: async (): Promise<{ success: boolean; message: string; stats?: any }> => {
+    return apiClient.post('/grievances/cron/trigger-scan');
   }
 };
+
+export interface DefaulterOfficer {
+  _id: string;
+  officerId: string;
+  officerName: string;
+  firstName?: string;
+  lastName?: string;
+  designation?: string;
+  phone?: string;
+  email?: string;
+  departmentName: string;
+  departmentId?: string;
+  totalDefaulterGrievances: number;
+  latestReminderAt?: string;
+  oldestReminderAt?: string;
+  oldestGrievanceCreated?: string;
+  grievances: Array<{
+    _id: string;
+    grievanceId: string;
+    citizenName: string;
+    citizenPhone: string;
+    description: string;
+    category?: string;
+    createdAt: string;
+    reminderCount: number;
+    lastReminderAt?: string;
+    lastReminderRemarks?: string;
+    slaHours: number;
+  }>;
+}
+

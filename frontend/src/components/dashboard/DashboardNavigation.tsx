@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Settings,
   Shield,
+  ShieldAlert,
   Target,
   TrendingUp,
   User as UserIcon,
@@ -107,6 +108,15 @@ export function DashboardNavigation({
             value: "grievances",
             label: "Grievances",
             icon: FileText,
+          },
+        ]
+      : []),
+    ...((isCompanyAdminRole || isSuperAdminUser || canSeeDepartmentsTab) && hasGrievanceModule
+      ? [
+          {
+            value: "defaulters",
+            label: "Defaulters Ledger",
+            icon: ShieldAlert,
           },
         ]
       : []),

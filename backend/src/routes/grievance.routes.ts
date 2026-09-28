@@ -729,6 +729,338 @@ router.put('/:id/revert', requirePermission(Permission.REVERT_GRIEVANCE), async 
   }
 });
 
+// @route   GET /api/grievances/defaulters
+// @desc    Get defaulting officers list (officers with tickets ignored after 2+ reminders)
+// @access  Private (Company Admin, Collector, or users with VIEW_GRIEVANCE permission)
+router.get('/defaulters', requirePermission(Permission.READ_GRIEVANCE), async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user!;
+    if (!currentUser.companyId) {
+      return res.status(400).json({ success: false, message: 'User company is required' });
+    }
+
+    const minReminders = Math.max(1, Number(req.query.minReminders) || 2);
+    const departmentId = req.query.departmentId as string;
+    const search = (req.query.search as string || '').trim();
+    const sortBy = (req.query.sortBy as string) || 'count';
+
+    const activeStatuses = [
+      GrievanceStatus.PENDING,
+      GrievanceStatus.ASSIGNED,
+      GrievanceStatus.IN_PROGRESS,
+      GrievanceStatus.REVERTED,
+      'OPEN'
+    ];
+
+    const matchStage: any = {
+      companyId: new mongoose.Types.ObjectId(currentUser.companyId),
+      assignedTo: { $ne: null },
+      reminderCount: { $gte: minReminders },
+      status: { $in: activeStatuses }
+    };
+
+    if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+      matchStage.$or = [
+        { departmentId: new mongoose.Types.ObjectId(departmentId) },
+        { subDepartmentId: new mongoose.Types.ObjectId(departmentId) }
+      ];
+    }
+
+    const defaulters = await Grievance.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: '$assignedTo',
+          totalDefaulterGrievances: { $sum: 1 },
+          grievances: {
+            $push: {
+              _id: '$_id',
+              grievanceId: '$grievanceId',
+              citizenName: '$citizenName',
+              citizenPhone: '$citizenPhone',
+              description: '$description',
+              category: '$category',
+              createdAt: '$createdAt',
+              reminderCount: '$reminderCount',
+              lastReminderAt: '$lastReminderAt',
+              lastReminderRemarks: '$lastReminderRemarks',
+              slaHours: { $ifNull: ['$slaHours', 120] }
+            }
+          },
+          latestReminderAt: { $max: '$lastReminderAt' },
+          oldestReminderAt: { $min: '$lastReminderAt' },
+          oldestGrievanceCreated: { $min: '$createdAt' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'officer'
+        }
+      },
+      { $unwind: '$officer' },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'officer.departmentIds.0',
+          foreignField: '_id',
+          as: 'department'
+        }
+      },
+      {
+        $unwind: {
+          path: '$department',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          officerId: '$_id',
+          officerName: {
+            $concat: [
+              { $ifNull: ['$officer.firstName', ''] },
+              ' ',
+              { $ifNull: ['$officer.lastName', ''] }
+            ]
+          },
+          firstName: '$officer.firstName',
+          lastName: '$officer.lastName',
+          designation: {
+            $ifNull: [
+              '$officer.designation',
+              { $arrayElemAt: ['$officer.designations', 0] }
+            ]
+          },
+          phone: '$officer.phone',
+          email: '$officer.email',
+          departmentName: { $ifNull: ['$department.name', 'General Department'] },
+          departmentId: '$department._id',
+          totalDefaulterGrievances: 1,
+          latestReminderAt: 1,
+          oldestReminderAt: 1,
+          oldestGrievanceCreated: 1,
+          grievances: 1
+        }
+      }
+    ]);
+
+    let filteredDefaulters = defaulters;
+    if (search) {
+      const lower = search.toLowerCase();
+      filteredDefaulters = filteredDefaulters.filter((d: any) =>
+        d.officerName.toLowerCase().includes(lower) ||
+        (d.designation && d.designation.toLowerCase().includes(lower)) ||
+        (d.departmentName && d.departmentName.toLowerCase().includes(lower)) ||
+        (d.phone && d.phone.includes(lower))
+      );
+    }
+
+    if (sortBy === 'days') {
+      filteredDefaulters.sort((a: any, b: any) => {
+        const timeA = a.oldestReminderAt ? new Date(a.oldestReminderAt).getTime() : 0;
+        const timeB = b.oldestReminderAt ? new Date(b.oldestReminderAt).getTime() : 0;
+        return timeA - timeB;
+      });
+    } else {
+      filteredDefaulters.sort((a: any, b: any) => b.totalDefaulterGrievances - a.totalDefaulterGrievances);
+    }
+
+    const totalDefaulterOfficers = filteredDefaulters.length;
+    const totalNeglectedGrievances = filteredDefaulters.reduce(
+      (sum: number, d: any) => sum + (d.totalDefaulterGrievances || 0),
+      0
+    );
+
+    const criticalOfficersCount = filteredDefaulters.filter((d: any) =>
+      d.grievances.some((g: any) => (g.reminderCount || 0) >= 3)
+    ).length;
+
+    const criticalGrievancesCount = filteredDefaulters.reduce(
+      (sum: number, d: any) =>
+        sum + (d.grievances || []).filter((g: any) => (g.reminderCount || 0) >= 3).length,
+      0
+    );
+
+    const deptCountMap: Record<string, number> = {};
+    for (const d of filteredDefaulters) {
+      const dept = d.departmentName || 'General';
+      deptCountMap[dept] = (deptCountMap[dept] || 0) + d.totalDefaulterGrievances;
+    }
+    let worstDepartment = 'None';
+    let maxDeptCases = 0;
+    for (const [dept, count] of Object.entries(deptCountMap)) {
+      if (count > maxDeptCases) {
+        maxDeptCases = count;
+        worstDepartment = `${dept} (${count} cases)`;
+      }
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        totalDefaulterOfficers,
+        totalNeglectedGrievances,
+        criticalOfficersCount,
+        criticalGrievancesCount,
+        worstDepartment,
+        minReminders,
+        defaulters: filteredDefaulters
+      }
+    });
+  } catch (error: any) {
+    logger.error('Error fetching defaulters report:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch defaulters report', error: error.message });
+  }
+});
+
+// @route   GET /api/grievances/defaulters/export
+// @desc    Export defaulting officers and their ignored grievances to CSV for Collector review
+// @access  Private (Company Admin, Collector)
+router.get('/defaulters/export', requirePermission(Permission.READ_GRIEVANCE), async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user!;
+    if (!currentUser.companyId) {
+      return res.status(400).json({ success: false, message: 'User company is required' });
+    }
+
+    const minReminders = Math.max(1, Number(req.query.minReminders) || 2);
+    const activeStatuses = [
+      GrievanceStatus.PENDING,
+      GrievanceStatus.ASSIGNED,
+      GrievanceStatus.IN_PROGRESS,
+      GrievanceStatus.REVERTED,
+      'OPEN'
+    ];
+
+    const grievances = await Grievance.find({
+      companyId: currentUser.companyId,
+      assignedTo: { $ne: null },
+      reminderCount: { $gte: minReminders },
+      status: { $in: activeStatuses }
+    })
+      .populate('departmentId', 'name')
+      .populate('subDepartmentId', 'name')
+      .populate('assignedTo', 'firstName lastName phone designation')
+      .sort({ reminderCount: -1, lastReminderAt: 1 })
+      .lean();
+
+    const rows: string[] = [];
+    // CSV Header with BOM for Excel formatting
+    rows.push('\uFEFF"Sr. No.","Grievance ID","Officer Name","Designation","Phone","Department","Office","Citizen Name","Citizen Phone","Reminders Sent","Last Reminder Date","Days Since Last Reminder","Latest Reminder Remarks","Ticket Status"');
+
+    const now = new Date();
+    grievances.forEach((g: any, index: number) => {
+      const officer = g.assignedTo || {};
+      const officerName = `${officer.firstName || ''} ${officer.lastName || ''}`.trim() || 'Unassigned';
+      const designation = officer.designation || 'Officer';
+      const phone = officer.phone || 'N/A';
+      const deptName = g.departmentId?.name || g.category || 'N/A';
+      const officeName = g.subDepartmentId?.name || 'N/A';
+      const lastReminderDate = g.lastReminderAt 
+        ? new Date(g.lastReminderAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) 
+        : 'N/A';
+      const daysSinceReminder = g.lastReminderAt ? Math.floor((now.getTime() - new Date(g.lastReminderAt).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A';
+      const remarks = (g.lastReminderRemarks || '').replace(/"/g, '""');
+
+      rows.push(
+        `"${index + 1}","${g.grievanceId || ''}","${officerName}","${designation}","${phone}","${deptName}","${officeName}","${g.citizenName || ''}","${g.citizenPhone || ''}","${g.reminderCount || 0}","${lastReminderDate}","${daysSinceReminder}","${remarks}","${g.status || ''}"`
+      );
+    });
+
+    const csvContent = rows.join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=defaulter-officers-report-${new Date().toISOString().slice(0, 10)}.csv`);
+    return res.status(200).send(csvContent);
+  } catch (error: any) {
+    logger.error('Error exporting defaulters report:', error);
+    return res.status(500).json({ success: false, message: 'Failed to export defaulters report', error: error.message });
+  }
+});
+
+// @route   POST /api/grievances/defaulters/:officerId/show-cause
+// @desc    Dispatch formal Collector directive / show-cause notice to defaulting officer
+// @access  Private (Company Admin only)
+router.post('/defaulters/:officerId/show-cause', requirePermission(Permission.UPDATE_GRIEVANCE), async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user!;
+    const { officerId } = req.params;
+    const { remarks } = req.body as { remarks?: string };
+
+    const officer = await User.findById(officerId);
+    if (!officer) {
+      return res.status(404).json({ success: false, message: 'Officer not found' });
+    }
+
+    const officerPhone = officer.phone;
+    if (!officerPhone) {
+      return res.status(400).json({ success: false, message: 'Officer has no registered phone number' });
+    }
+
+    // Find all defaulting grievances for this officer
+    const defaultingGrievances = await Grievance.find({
+      companyId: currentUser.companyId,
+      assignedTo: officer._id,
+      reminderCount: { $gte: 2 },
+      status: { $in: [GrievanceStatus.PENDING, GrievanceStatus.ASSIGNED, GrievanceStatus.IN_PROGRESS, GrievanceStatus.REVERTED, 'OPEN'] }
+    }).select('grievanceId category createdAt reminderCount');
+
+    const officerName = `${officer.firstName || ''} ${officer.lastName || ''}`.trim() || 'Officer';
+    const noticeRemarks = remarks?.trim() || `Collectorate Directive: You have ${defaultingGrievances.length} grievances pending despite 2+ reminders. Immediate resolution or written explanation required within 24 hours.`;
+
+    // Dispatch In-App Notification
+    const { notifyUser } = await import('../services/inAppNotificationService');
+    await notifyUser({
+      userId: officer._id,
+      companyId: currentUser.companyId as any,
+      eventType: 'GRIEVANCE_REMINDER',
+      title: '🚨 Official Collector Directive (Show-Cause)',
+      message: noticeRemarks,
+      meta: { pendingGrievancesCount: defaultingGrievances.length, remarks: noticeRemarks }
+    });
+
+    // Send WhatsApp notification
+    const { sendWhatsAppMessage } = await import('../services/whatsappService');
+    const company = await Company.findById(currentUser.companyId);
+    
+    await sendWhatsAppMessage(
+      company,
+      officerPhone,
+      `🚨 *COLLECTORATE DIRECTIVE - URGENT*\n\nRespected ${officerName},\n\nYou have *${defaultingGrievances.length} public grievance(s)* pending action despite multiple reminders.\n\n*Notice from Collector's Office:*\n"${noticeRemarks}"\n\nPlease log in to the portal immediately to submit resolution or explanation.`,
+      { requireConsent: false }
+    ).catch(err => {
+      logger.warn(`Could not deliver direct WhatsApp text directive: ${err.message}`);
+    });
+
+    return res.json({
+      success: true,
+      message: `Collector show-cause notice issued to ${officerName} for ${defaultingGrievances.length} neglected grievance(s).`
+    });
+  } catch (error: any) {
+    logger.error('Error sending show-cause notice:', error);
+    return res.status(500).json({ success: false, message: 'Failed to send show-cause notice', error: error.message });
+  }
+});
+
+// @route   POST /api/grievances/cron/trigger-scan
+// @desc    Manually trigger SLA Escalation Cron Scan (Company Admin only)
+// @access  Private (Company Admin only)
+router.post('/cron/trigger-scan', requirePermission(Permission.UPDATE_GRIEVANCE), async (req: Request, res: Response) => {
+  try {
+    const { runSlaEscalationScan } = await import('../services/slaEscalationCron');
+    const stats = await runSlaEscalationScan();
+    return res.json({
+      success: true,
+      message: 'SLA Escalation Scan completed successfully',
+      stats
+    });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: 'Scan failed', error: error.message });
+  }
+});
+
 // @route   GET /api/grievances/:id
 // @desc    Get grievance by ID
 // @access  Private
@@ -1595,8 +1927,8 @@ router.post('/:id/reminder', requirePermission(Permission.UPDATE_GRIEVANCE), asy
       return res.status(400).json({ success: false, message: 'Remarks are required' });
     }
 
-    if (!currentUser.companyId || currentUser.companyId.toString() !== JHARSUGUDA_COMPANY_ID) {
-      return res.status(403).json({ success: false, message: 'Reminder is enabled only for Collectorate Jharsuguda' });
+    if (!currentUser.companyId) {
+      return res.status(403).json({ success: false, message: 'User must belong to a company to send reminders' });
     }
 
     const roleName = String((currentUser as any).roleName || '').toLowerCase();
@@ -1647,9 +1979,25 @@ router.post('/:id/reminder', requirePermission(Permission.UPDATE_GRIEVANCE), asy
     (grievance as any).reminderCount = reminderCount;
     (grievance as any).lastReminderAt = now;
     (grievance as any).lastReminderRemarks = trimmedRemarks;
+    if (reminderCount >= 2) {
+      (grievance as any).isDefaulterIgnored = true;
+    }
+
+    if (!Array.isArray((grievance as any).reminderHistory)) {
+      (grievance as any).reminderHistory = [];
+    }
+    (grievance as any).reminderHistory.push({
+      reminderNumber: reminderCount,
+      sentAt: now,
+      sentBy: currentUser._id,
+      triggerType: 'MANUAL',
+      remarks: trimmedRemarks,
+      channel: 'WHATSAPP'
+    });
+
     grievance.timeline.push({
       action: 'REMINDER_SENT',
-      details: { remarks: trimmedRemarks, reminderCount },
+      details: { remarks: trimmedRemarks, reminderCount, triggerType: 'MANUAL' },
       performedBy: currentUser._id,
       timestamp: now
     });
@@ -2052,3 +2400,4 @@ router.delete('/:id', requirePermission(Permission.DELETE_GRIEVANCE), async (req
 });
 
 export default router;
+

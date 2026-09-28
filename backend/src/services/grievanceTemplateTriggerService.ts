@@ -188,6 +188,7 @@ export async function triggerGrievanceEvent(options: {
           options.buttonParam, 
           {
             recipientType: 'ADMIN',
+            requireConsent: false, // Internal administrative notifications do not require citizen opt-in
             citizenPhone: options.citizenPhone || options.grievance?.citizenPhone
           }
         );

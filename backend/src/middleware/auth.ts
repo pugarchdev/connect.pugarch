@@ -29,8 +29,15 @@ export const authenticate = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
+    let token: string | null = null;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (typeof req.query.token === 'string' && req.query.token.trim()) {
+      token = req.query.token.trim();
+    }
+
+    if (!token) {
       res.status(401).json({
         success: false,
         message: 'No token provided. Authentication required.'
@@ -38,7 +45,6 @@ export const authenticate = async (
       return;
     }
 
-    const token = authHeader.substring(7);
     const decoded = verifyToken(token);
     const user = await User.findById(decoded.userId).select('+password');
 

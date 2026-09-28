@@ -85,6 +85,7 @@ import {
   getDashboardTenantConfig,
   getScopedCompanyId,
 } from "@/lib/tenant-config";
+import DefaultersLedgerView from "@/components/dashboard/DefaultersLedgerView";
 
 const LazyRoleManagement = dynamic(
   () => import("@/components/roles/RoleManagement"),
@@ -3570,6 +3571,21 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       </>
                     </CardContent>
                   </Card>
+                </TabsContent>
+              )}
+
+              {/* Defaulter Officers & Non-Compliance Ledger Tab */}
+              {hasModule(Module.GRIEVANCE) && (isCompanyAdminRole || isSuperAdminUser || isDepartmentAdminRole || isSubDepartmentAdminRole) && (
+                <TabsContent value="defaulters" className="space-y-4">
+                  <DefaultersLedgerView
+                    onOpenGrievanceDetail={(id) => openGrievanceDetail(id)}
+                    onOpenTransferWorkload={(officer) => {
+                      if (setShowTransferWorkloadDialog && setTransferWorkloadUser) {
+                        setTransferWorkloadUser(officer);
+                        setShowTransferWorkloadDialog(true);
+                      }
+                    }}
+                  />
                 </TabsContent>
               )}
 

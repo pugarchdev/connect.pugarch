@@ -46,6 +46,7 @@ import moduleRoutes from './routes/module.routes';
 import whatsappTemplateRoutes from './routes/whatsappTemplate.routes';
 import notificationRoutes from './routes/notification.routes';
 import { startWhatsAppTemplateSyncCron } from './services/whatsappTemplateSyncCron';
+import { startSlaEscalationCron } from './services/slaEscalationCron';
 import { databaseSafetyContextMiddleware } from './utils/databaseSafety';
 
 // Import middleware
@@ -365,6 +366,7 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);
       startWhatsAppTemplateSyncCron();
+      startSlaEscalationCron();
     });
 
     // Production-grade error handling for port conflicts

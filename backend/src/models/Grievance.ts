@@ -51,6 +51,15 @@ export interface IGrievance extends Document {
   reopenedCount?: number;
   lastReminderAt?: Date;
   lastReminderRemarks?: string;
+  reminderHistory?: Array<{
+    reminderNumber: number;
+    sentAt: Date;
+    sentBy?: mongoose.Types.ObjectId | null;
+    triggerType: 'AUTO_CRON' | 'MANUAL';
+    remarks?: string;
+    channel?: string;
+  }>;
+  isDefaulterIgnored?: boolean;
   language: 'en' | 'hi' | 'mr' | 'or';
   timeline: Array<{
     action: string;
@@ -239,6 +248,38 @@ const GrievanceSchema: Schema = new Schema(
     lastReminderRemarks: {
       type: String
     },
+    reminderHistory: [{
+      reminderNumber: {
+        type: Number,
+        required: true
+      },
+      sentAt: {
+        type: Date,
+        default: Date.now
+      },
+      sentBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+      },
+      triggerType: {
+        type: String,
+        enum: ['AUTO_CRON', 'MANUAL'],
+        default: 'AUTO_CRON'
+      },
+      remarks: {
+        type: String
+      },
+      channel: {
+        type: String,
+        default: 'WHATSAPP'
+      }
+    }],
+    isDefaulterIgnored: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
     language: {
       type: String,
       enum: ['en', 'hi', 'mr', 'or'],
@@ -283,12 +324,36 @@ GrievanceSchema.index({ companyId: 1, status: 1 });
 GrievanceSchema.index({ companyId: 1, createdAt: -1 });
 GrievanceSchema.index({ departmentId: 1, status: 1 });
 GrievanceSchema.index({ assignedTo: 1, status: 1 });
+GrievanceSchema.index({ companyId: 1, reminderCount: 1, status: 1 });
 GrievanceSchema.index({ createdAt: -1 });
 // ✅ Per-company uniqueness: allows GRV00000001.. to restart per company safely
 GrievanceSchema.index({ companyId: 1, grievanceId: 1 }, { unique: true, sparse: true });
 
-// Pre-save hook to generate grievanceId (using atomic counter if not provided)
+// Pre-save hook to generate grievanceId and calculate SLA
 GrievanceSchema.pre('save', async function (this: IGrievance, next) {
+  if (this.isNew && !this.grievanceId) {
+    try {
+      // Use atomic counter for ID generation (prevents race conditions)
+      // Pass companyId for per-company counters
+      const { getNextGrievanceId } = await import('../utils/idGenerator');
+      this.grievanceId = await getNextGrievanceId(this.companyId as any);
+    } catch (error) {
+      console.error('❌ Error generating grievance ID:', error);
+      return next(error as any);
+    }
+  }
+
+  // Ensure default company SLA hours is captured if not already set on new grievance
+  if (this.isNew && !this.slaHours && this.companyId) {
+    try {
+      const Company = mongoose.model('Company');
+      const company = await Company.findById(this.companyId);
+      this.slaHours = (company as any)?.slaSettings?.defaultSlaHours || 120;
+    } catch (err) {
+      this.slaHours = 120;
+    }
+  }
+
   // Handle SLA recalculation on creation or update
   if (this.isModified('slaHours') || (this.isNew && !this.slaDueDate)) {
     const hours = this.slaHours || 120;
@@ -298,23 +363,7 @@ GrievanceSchema.pre('save', async function (this: IGrievance, next) {
     this.slaDueDate = dueDate;
   }
 
-  if (this.isNew && !this.grievanceId) {
-    try {
-      // Use atomic counter for ID generation (prevents race conditions)
-      // Pass companyId for per-company counters
-      const { getNextGrievanceId } = await import('../utils/idGenerator');
-      this.grievanceId = await getNextGrievanceId(this.companyId as any);
-      
-      if (!this.slaHours) {
-        const Company = mongoose.model('Company');
-        const company = await Company.findById(this.companyId);
-        this.slaHours = (company as any)?.slaSettings?.defaultSlaHours || 120;
-      }
-    } catch (error) {
-      console.error('❌ Error generating grievance ID:', error);
-      return next(error as any);
-    }
-    
+  if (this.isNew) {
     // Initialize status history
     this.statusHistory = [{
       status: this.status,
@@ -331,6 +380,7 @@ GrievanceSchema.pre('save', async function (this: IGrievance, next) {
       timestamp: new Date()
     }];
   }
+
   next();
 });
 
