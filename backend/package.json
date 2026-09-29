@@ -13,6 +13,7 @@
     "seed:modules": "ts-node src/scripts/seedModules.ts",
     "sync:system": "ts-node src/scripts/syncSystem.ts",
     "migrate:redis": "ts-node src/scripts/migrateRedis.ts",
+    "create:indexes": "ts-node src/scripts/createProductionIndexes.ts",
     "test": "jest"
   },
   "keywords": [

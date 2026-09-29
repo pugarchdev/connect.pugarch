@@ -3,6 +3,7 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install --include=dev",
   "framework": null,
+  "regions": ["bom1"],
   "rewrites": [
     {
       "source": "/(.*)",
