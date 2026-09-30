@@ -171,12 +171,22 @@ async function enforceRateLimit(company: any, to: string): Promise<void> {
   }
 }
 
-async function logOutgoingMessage(company: any, to: string, message: string, type: string, templateName?: string) {
+async function logOutgoingMessage(
+  company: any,
+  to: string,
+  message: string,
+  type: string,
+  templateName?: string,
+  category?: string
+) {
   try {
     const rawCompanyId = company?._id || company?.companyId || company?.whatsappConfig?.companyId;
     const normalizedCompanyId = rawCompanyId && typeof rawCompanyId === 'object' && rawCompanyId._id
       ? String(rawCompanyId._id)
       : (rawCompanyId ? String(rawCompanyId) : undefined);
+    
+    const resolvedCategory = (category || (type === 'template' ? 'UTILITY' : 'SERVICE')).toUpperCase();
+
     await createAuditLog({
       action: AuditAction.WHATSAPP_MSG,
       resource: 'OUTGOING',
@@ -186,6 +196,7 @@ async function logOutgoingMessage(company: any, to: string, message: string, typ
         to,
         message: message.substring(0, 1000), // Cap length
         type,
+        category: resolvedCategory,
         templateName: templateName || null,
         description: `Bot replied to ${to} (${type}): ${message.substring(0, 50)}...`
       }
@@ -866,7 +877,8 @@ export async function sendWhatsAppTemplate(
     });
 
     // Essential success log is handled in whatsapp.service.ts
-    await logOutgoingMessage(company, to, `Template: ${templateName}`, 'template', templateName);
+    const templateCategory = resolvedTemplate?.template?.category || 'UTILITY';
+    await logOutgoingMessage(company, to, `Template: ${templateName}`, 'template', templateName, templateCategory);
 
     return {
       success: true,

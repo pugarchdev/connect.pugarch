@@ -31,6 +31,8 @@ import DashboardStats from "@/components/superadmin/DashboardStats";
 import CompanyTabContent from "@/components/superadmin/CompanyTabContent";
 import UserTabContent from "@/components/superadmin/UserTabContent";
 import DepartmentTabContent from "@/components/superadmin/DepartmentTabContent";
+import CompanyMessageAnalytics from "@/components/superadmin/CompanyMessageAnalytics";
+import { analyticsAPI, CompanyMessageStat, PlatformMessageTotals } from "@/lib/api/analytics";
 import {
   Shield,
   RefreshCw,
@@ -157,6 +159,42 @@ function SuperAdminOverviewContent() {
     null,
   );
 
+  const [messageTotals, setMessageTotals] = useState<PlatformMessageTotals>({
+    utility: 0,
+    service: 0,
+    authentication: 0,
+    marketing: 0,
+    total: 0,
+  });
+  const [companyMessageStats, setCompanyMessageStats] = useState<CompanyMessageStat[]>([]);
+  const [loadingMessageAnalytics, setLoadingMessageAnalytics] = useState(false);
+
+  const [analyticsFilter, setAnalyticsFilter] = useState<any>({ period: 'all' });
+
+  const filterLabel = (analyticsFilter.startDate || analyticsFilter.endDate)
+    ? 'CUSTOM'
+    : (analyticsFilter.period && analyticsFilter.period !== 'all')
+    ? String(analyticsFilter.period).toUpperCase()
+    : analyticsFilter.companyId
+    ? 'ORG'
+    : 'ALL';
+
+  const fetchMessageAnalytics = useCallback(async (params?: any) => {
+    try {
+      setLoadingMessageAnalytics(true);
+      const activeParams = params !== undefined ? params : analyticsFilter;
+      const res = await analyticsAPI.getMessageAnalytics(activeParams);
+      if (res.success && res.data) {
+        setMessageTotals(res.data.totals || { utility: 0, service: 0, authentication: 0, marketing: 0, total: 0 });
+        setCompanyMessageStats(res.data.companies || []);
+      }
+    } catch (e) {
+      console.error("Error fetching message analytics", e);
+    } finally {
+      setLoadingMessageAnalytics(false);
+    }
+  }, [analyticsFilter]);
+
   const fetchAllInitialData = useCallback(async () => {
     // Initial fetch for companies dropdown and stats
     try {
@@ -185,10 +223,12 @@ function SuperAdminOverviewContent() {
       if (rolesRes.success) {
         setAllRoles(rolesRes.data.roles);
       }
+
+      fetchMessageAnalytics();
     } catch (e) {
       console.error("Error fetching initial data", e);
     }
-  }, []);
+  }, [fetchMessageAnalytics]);
 
   useEffect(() => {
     if (mounted && user && isSuperAdmin(user)) {
@@ -820,9 +860,23 @@ function SuperAdminOverviewContent() {
               <StatsSkeleton />
             ) : (
               <div className={`transition-opacity duration-300 ${loading ? "opacity-50 pointer-events-none" : ""}`}>
-                <DashboardStats stats={stats} setActiveTab={setActiveTab} />
+                <DashboardStats stats={stats} messageTotals={messageTotals} filterLabel={filterLabel} setActiveTab={setActiveTab} />
               </div>
             )}
+
+            {/* Total Company Message Analytics (Utility, Service, Authentication breakdown with filters) */}
+            <div className="mt-6">
+              <CompanyMessageAnalytics
+                companies={companyMessageStats}
+                loading={loadingMessageAnalytics}
+                onRefresh={() => fetchMessageAnalytics(analyticsFilter)}
+                onOpenCompanyDashboard={handleOpenCompanyDashboard}
+                onFilterChange={(params) => {
+                  setAnalyticsFilter(params);
+                  fetchMessageAnalytics(params);
+                }}
+              />
+            </div>
 
             <div className="mt-6">
               {showLogs ? (
