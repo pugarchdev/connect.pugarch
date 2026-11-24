@@ -64,6 +64,7 @@ export interface MetaPricingRates {
   freeQuota: number;
   baseMonthlyQuota: number;
   monthsFactor: number;
+  effectiveSince?: string;
   gstPct: number;
   currency: string;
   currencySymbol: string;
@@ -82,6 +83,7 @@ export interface CompanyCostStat extends CompanyMessageStat {
   totalCost: number;
   savings: number;
   effectiveCostPerMsg: number;
+  monthsIncluded?: string[];
 }
 
 export interface MetaCostTotals extends PlatformMessageTotals {
@@ -113,6 +115,7 @@ export interface MetaCostCalculatorParams extends MessageAnalyticsParams {
   marketingRate?: number;
   freeQuota?: number;
   gstRate?: number;
+  applyOnlySinceEffectiveDate?: boolean;
 }
 
 export const analyticsAPI = {
@@ -139,6 +142,7 @@ export const analyticsAPI = {
     if (params?.marketingRate !== undefined) query.set('marketingRate', String(params.marketingRate));
     if (params?.freeQuota !== undefined) query.set('freeQuota', String(params.freeQuota));
     if (params?.gstRate !== undefined) query.set('gstRate', String(params.gstRate));
+    if (params?.applyOnlySinceEffectiveDate !== undefined) query.set('applyOnlySinceEffectiveDate', String(params.applyOnlySinceEffectiveDate));
     const qStr = query.toString();
     return apiClient.get(`/dashboard/superadmin/meta-cost-calculator${qStr ? `?${qStr}` : ''}`);
   },

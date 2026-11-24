@@ -90,8 +90,9 @@ export default function MetaCostCalculator({
 
   // 2. Filter & Timeframe States
   const [selectedPeriod, setSelectedPeriod] = useState<
-    "thisMonth" | "lastMonth" | "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "all"
-  >("thisMonth");
+    "sinceOct" | "thisMonth" | "october" | "daily" | "weekly" | "all"
+  >("sinceOct");
+  const [applyOnlySinceEffectiveDate, setApplyOnlySinceEffectiveDate] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,19 +141,21 @@ export default function MetaCostCalculator({
         return { startDate: customStart, endDate: customEnd, period: undefined };
       }
 
+      if (period === "sinceOct") {
+        return { startDate: "2026-10-01", endDate: toYMD(now), period: "sinceOct" as const };
+      }
+
       if (period === "thisMonth") {
         const start = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
         const end = toYMD(now);
-        return { startDate: start, endDate: end, period: "monthly" as const };
+        return { startDate: start, endDate: end, period: "thisMonth" as const };
       }
 
-      if (period === "lastMonth") {
-        const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      if (period === "october") {
         return {
-          startDate: toYMD(firstDayLastMonth),
-          endDate: toYMD(lastDayLastMonth),
-          period: "monthly" as const,
+          startDate: "2026-10-01",
+          endDate: "2026-10-31",
+          period: "october" as const,
         };
       }
 
@@ -186,6 +189,7 @@ export default function MetaCostCalculator({
         marketingRate: rates.marketingRate,
         freeQuota: rates.baseMonthlyQuota,
         gstRate: rates.gstPct,
+        applyOnlySinceEffectiveDate,
       };
 
       const res = await analyticsAPI.getMetaCostCalculator(params);
@@ -206,14 +210,14 @@ export default function MetaCostCalculator({
     } finally {
       setLoading(false);
     }
-  }, [selectedPeriod, startDate, endDate, companyFilter, rates.serviceRate, rates.utilityRate, rates.authRate, rates.marketingRate, rates.baseMonthlyQuota, rates.gstPct, resolveDateParams]);
+  }, [selectedPeriod, startDate, endDate, companyFilter, applyOnlySinceEffectiveDate, rates.serviceRate, rates.utilityRate, rates.authRate, rates.marketingRate, rates.baseMonthlyQuota, rates.gstPct, resolveDateParams]);
 
   useEffect(() => {
     fetchCostData();
   }, [fetchCostData]);
 
   // Handle Preset Selection
-  const applyPreset = (preset: "thisMonth" | "lastMonth" | "daily" | "weekly" | "quarterly" | "yearly" | "all") => {
+  const applyPreset = (preset: "sinceOct" | "thisMonth" | "october" | "daily" | "weekly" | "all") => {
     setSelectedPeriod(preset);
     setStartDate("");
     setEndDate("");
@@ -446,11 +450,15 @@ export default function MetaCostCalculator({
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-400/30">
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-                Official Meta Pricing 2024–2025
+                Meta Pricing Changes Effective: October 1, 2026
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                 1,000 Free Service Msgs / Mo / Org
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                Pre-Oct 2026 Messages Free (Legacy Policy)
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3">
@@ -458,10 +466,10 @@ export default function MetaCostCalculator({
               Meta WhatsApp Billing & Cost Calculator
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm max-w-3xl leading-relaxed">
-              Calculate exact platform expenses across all organizations according to Meta&apos;s latest per-message pricing model. Includes dedicated counts for{" "}
+              Calculate exact platform expenses across all organizations according to Meta&apos;s latest consumption pricing model (effective <strong>October 1, 2026</strong>). Includes dedicated counts for{" "}
               <strong className="text-sky-300">Service</strong>, <strong className="text-emerald-300">Utility</strong>, and{" "}
               <strong className="text-purple-300">Authentication (OTPs)</strong>, with automatic deduction of the monthly{" "}
-              <strong className="text-amber-300">1,000 Free Service Messages</strong> allowance per WhatsApp Business number, plus 18% GST.
+              <strong className="text-amber-300">1,000 Free Service Messages</strong> allowance per WhatsApp Business number, plus 18% GST. Messages dispatched prior to October 1, 2026 are exempt under Meta&apos;s legacy free customer window.
             </p>
           </div>
 
@@ -569,6 +577,30 @@ export default function MetaCostCalculator({
               Standard
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Meta Policy Effective Date Notification Banner */}
+      <div className="rounded-2xl p-4 bg-sky-50/90 border border-sky-200/90 text-sky-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <Info className="w-5 h-5" />
+          </div>
+          <div className="text-xs leading-relaxed">
+            <span className="font-bold text-sky-900 block text-sm">
+              Meta WhatsApp Pricing Update (Effective October 1, 2026):
+            </span>
+            Meta updated its WhatsApp Business API pricing structure starting <strong>October 1, 2026</strong>. 
+            Prior to October 2026, customer service responses inside 24h windows were completely free under legacy policy. 
+            Under the new model, every organization receives <strong>1,000 Free Service Messages per calendar month</strong>, with excess volume billed at <strong>₹{rates.serviceRate.toFixed(4)}/msg</strong>. 
+            Calculated figures below apply strictly to messages dispatched from <strong>October 1, 2026 onwards</strong>.
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-3 py-1.5 rounded-xl bg-white border border-sky-200 text-sky-800 font-bold text-xs shadow-sm flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            Effective: 1 Oct 2026
+          </span>
         </div>
       </div>
 
@@ -899,13 +931,12 @@ export default function MetaCostCalculator({
             <div className="flex items-center gap-1.5 flex-wrap">
               <div className="bg-slate-800/90 border border-slate-700/80 rounded-xl p-1 flex items-center gap-1">
                 {[
-                  { id: "thisMonth", label: "This Month" },
-                  { id: "lastMonth", label: "Last Month" },
-                  { id: "daily", label: "Daily" },
-                  { id: "weekly", label: "Weekly" },
-                  { id: "quarterly", label: "Quarterly" },
-                  { id: "yearly", label: "Yearly" },
-                  { id: "all", label: "All Time" },
+                  { id: "sinceOct", label: "Since Oct 2026 (New Rules)" },
+                  { id: "thisMonth", label: "Nov 2026 (Current)" },
+                  { id: "october", label: "Oct 2026 (Launch Month)" },
+                  { id: "weekly", label: "Last 7 Days" },
+                  { id: "daily", label: "Today" },
+                  { id: "all", label: "All Time (Since Oct 2026)" },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -1035,6 +1066,17 @@ export default function MetaCostCalculator({
               <option value="free">100% Free (Covered by 1K Quota)</option>
               <option value="active">Active Orgs Only</option>
             </select>
+
+            {/* Effective Since Oct 1 Filter Toggle */}
+            <label className="hidden sm:flex items-center gap-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm cursor-pointer hover:bg-slate-50 shrink-0">
+              <input
+                type="checkbox"
+                checked={applyOnlySinceEffectiveDate}
+                onChange={(e) => setApplyOnlySinceEffectiveDate(e.target.checked)}
+                className="w-3.5 h-3.5 rounded text-sky-600 focus:ring-sky-500 accent-sky-600"
+              />
+              <span className="text-[11px] text-slate-700 font-semibold">Strictly Since Oct 1, 2026</span>
+            </label>
           </div>
 
           {/* Sort By & Summary Pill */}
@@ -1172,13 +1214,13 @@ export default function MetaCostCalculator({
                           {formatNumber(comp.service)}
                         </div>
                         <div className="text-[10px] flex items-center justify-end gap-1 mt-0.5">
-                          {comp.service <= freeQuota ? (
-                            <span className="text-amber-600 bg-amber-50 px-1 py-0.2 rounded font-bold border border-amber-200 text-[9px]">
-                              100% Free ({formatNumber(comp.freeServiceUsed)}/1K)
+                          {comp.billableService === 0 ? (
+                            <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-bold border border-amber-200 text-[9px]">
+                              100% Free ({formatNumber(comp.freeServiceUsed)}/{rates.monthsFactor > 1 ? `${rates.monthsFactor}K` : "1K"})
                             </span>
                           ) : (
                             <span className="text-sky-700 font-semibold text-[10px]">
-                              {formatNumber(comp.billableService)} billed
+                              {formatNumber(comp.freeServiceUsed)} free + {formatNumber(comp.billableService)} billed
                             </span>
                           )}
                         </div>
@@ -1487,7 +1529,7 @@ export default function MetaCostCalculator({
                 <div className="flex items-center justify-between text-xs text-amber-700 bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200">
                   <span className="font-bold flex items-center gap-1.5">
                     <TrendingDown className="w-3.5 h-3.5" />
-                    Meta Free Tier Subsidy (1,000 Service Msgs):
+                    Meta Free Tier Subsidy ({formatNumber(selectedCompanyReceipt.freeServiceUsed)} Service Msgs):
                   </span>
                   <span className="font-mono font-black">
                     -{formatCurrency(selectedCompanyReceipt.savings)}
@@ -1520,7 +1562,7 @@ export default function MetaCostCalculator({
               <div className="rounded-xl p-3.5 bg-sky-50 border border-sky-100 text-sky-900 text-xs flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <div className="text-[11px] leading-relaxed">
-                  <strong>Meta Billing Policy Compliance:</strong> Each active WhatsApp Business Account is allocated 1,000 free Service messages every calendar month. Unused free messages do not roll over. Inbound customer messages are 100% free of charge.
+                  <strong>Meta Billing Policy Compliance (Effective Oct 1, 2026):</strong> Each active WhatsApp Business Account is allocated 1,000 free Service messages every calendar month. Unused free messages do not roll over. Inbound customer messages are 100% free of charge. Messages dispatched before October 1, 2026 were exempt under Meta&apos;s legacy free 24h customer window policy.
                 </div>
               </div>
             </div>
