@@ -173,7 +173,7 @@ const SUMMARY_CONTINUATION_SUFFIX = ` ${GRIEVANCE_DESCRIPTION_CONTINUATION_TEXT}
 function normalizeTemplateParamText(value: string): string {
   return String(value || '')
     .replace(/[\t\r\n]+/g, ' ')
-    .replace(/ {2,}/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 

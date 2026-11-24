@@ -954,7 +954,7 @@ function DashboardPageClientContent() {
         dateRange: "",
       });
       setOverviewFilters({ mainDeptId: "", subDeptId: "" });
-      setAnalyticsFilters({ mainDeptId: "", subDeptId: "" });
+      setAnalyticsFilters({ mainDeptId: "", subDeptId: "", period: "week", startDate: "", endDate: "" });
       setDeptFilters({ status: "", type: "", mainDeptId: "", subDeptId: "" });
       setUserFilters({ status: "", role: "", mainDeptId: "", subDeptId: "" });
       setGrievanceSearch("");
@@ -993,9 +993,18 @@ function DashboardPageClientContent() {
     mainDeptId: "",
     subDeptId: "",
   });
-  const [analyticsFilters, setAnalyticsFilters] = useState({
+  const [analyticsFilters, setAnalyticsFilters] = useState<{
+    mainDeptId: string;
+    subDeptId: string;
+    period: "week" | "month" | "quarter" | "year" | "all" | "custom";
+    startDate: string;
+    endDate: string;
+  }>({
     mainDeptId: "",
     subDeptId: "",
+    period: "week",
+    startDate: "",
+    endDate: "",
   });
   const [grievanceFilters, setGrievanceFilters] = useState({
     status: "",
@@ -1084,6 +1093,9 @@ function DashboardPageClientContent() {
     departmentId: isSubDepartmentAdminRole || isOperatorRole
             ? assignedDepartmentIds[0] || ""
             : (activeTab === "analytics" ? analyticsFilters : overviewFilters)?.subDeptId || (activeTab === "analytics" ? analyticsFilters : overviewFilters)?.mainDeptId || "",
+    period: activeTab === "analytics" ? analyticsFilters.period : "week",
+    startDate: activeTab === "analytics" ? analyticsFilters.startDate : undefined,
+    endDate: activeTab === "analytics" ? analyticsFilters.endDate : undefined,
     enabled: mounted && (visitedTabs.has("overview") || visitedTabs.has("analytics") || activeTab === "overview" || activeTab === "analytics"),
   });
   const { data: cachedDashboardKpis, isLoading: isLoadingKpisFromHook } = useDashboardKpis({
@@ -1146,8 +1158,8 @@ function DashboardPageClientContent() {
   }, [cachedDashboardStats]);
 
   useEffect(() => {
-    setLoadingStats(isLoadingStatsFromHook && !cachedDashboardStats);
-  }, [isLoadingStatsFromHook, cachedDashboardStats]);
+    setLoadingStats(isLoadingStatsFromHook);
+  }, [isLoadingStatsFromHook]);
 
   useEffect(() => {
     if (cachedDepartmentData) {
@@ -3499,6 +3511,8 @@ function DashboardPageClientContent() {
               <DashboardTabPanels
               {...{
                 activeTab,
+                analyticsFilters,
+                setAnalyticsFilters,
                 allDepartments,
                 appointmentFilters,
                 appointmentPage,

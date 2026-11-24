@@ -22,6 +22,7 @@ type OverviewGrievanceKpisProps = {
   rejectedCount: number;
   totalCount: number;
   last7DaysCount: number;
+  badgeLabel?: string;
   onPendingClick: () => void;
   onOverdueClick: () => void;
   onRevertedClick: () => void;
@@ -87,6 +88,7 @@ export function OverviewGrievanceKpis({
   rejectedCount,
   totalCount,
   last7DaysCount,
+  badgeLabel = "New",
   onPendingClick,
   onOverdueClick,
   onRevertedClick,
@@ -101,7 +103,7 @@ export function OverviewGrievanceKpis({
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-4">
       <KpiCard
-        title="Pending (Inc. In Progress)"
+        title="Pending"
         value={pendingCount}
         colorClass="text-blue-600"
         borderClass="border-blue-500"
@@ -181,7 +183,7 @@ export function OverviewGrievanceKpis({
       />
 
       <KpiCard
-        title="Total Grievances"
+        title="Total Griev. "
         value={totalCount}
         colorClass="text-slate-800"
         borderClass="border-indigo-500"
@@ -192,7 +194,7 @@ export function OverviewGrievanceKpis({
         footer={
           <div className="mt-1 flex items-center gap-1">
             <span className="text-[14px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-full">
-              {last7DaysCount} New
+              {last7DaysCount} {badgeLabel}
             </span>
           </div>
         }

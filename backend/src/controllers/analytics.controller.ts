@@ -21,14 +21,49 @@ const dashboardInFlight = new Map<string, Promise<any>>();
 const dashboardKpiResponseCache = new Map<string, DashboardCacheEntry>();
 const dashboardKpiInFlight = new Map<string, Promise<any>>();
 
-const buildDashboardCacheKey = (req: Request, companyId?: any, departmentId?: any) => {
+const buildDashboardCacheKey = (req: Request, companyId?: any, departmentId?: any, period?: any, startDate?: any, endDate?: any) => {
   const user = req.user as any;
   const userId = user?._id?.toString?.() || 'anonymous';
   const companyScope = companyId?.toString?.() || user?.companyId?.toString?.() || 'self';
   const departmentScope = departmentId?.toString?.() || 'all';
   const roleScope = user?.isSuperAdmin ? 'superadmin' : (resolveUserHierarchyLevel(user) || 0).toString();
-  return `${userId}::${roleScope}::${companyScope}::${departmentScope}`;
+  const periodScope = period?.toString?.() || 'week';
+  const startScope = startDate?.toString?.() || '';
+  const endScope = endDate?.toString?.() || '';
+  return `${userId}::${roleScope}::${companyScope}::${departmentScope}::${periodScope}::${startScope}::${endScope}`;
 };
+
+function parseFlexibleDate(str: any, isEnd = false): Date | null {
+  if (!str) return null;
+  const s = String(str).trim();
+  if (!s) return null;
+
+  // DD-MM-YYYY or DD/MM/YYYY
+  const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    return isEnd ? new Date(year, month, day, 23, 59, 59, 999) : new Date(year, month, day, 0, 0, 0, 0);
+  }
+
+  // YYYY-MM-DD or YYYY/MM/DD
+  const ymdMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (ymdMatch) {
+    const year = parseInt(ymdMatch[1], 10);
+    const month = parseInt(ymdMatch[2], 10) - 1;
+    const day = parseInt(ymdMatch[3], 10);
+    return isEnd ? new Date(year, month, day, 23, 59, 59, 999) : new Date(year, month, day, 0, 0, 0, 0);
+  }
+
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    if (isEnd) d.setHours(23, 59, 59, 999);
+    else d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  return null;
+}
 
 const getCachedDashboardPayload = (key: string) => {
   const cached = dashboardResponseCache.get(key);
@@ -155,8 +190,14 @@ export const dashboard = async (req: Request, res: Response) => {
   try {
     const currentUser = req.user!;
     const currentUserLevel = resolveUserHierarchyLevel(currentUser);
-    const { companyId, departmentId } = req.query;
-    const cacheKey = buildDashboardCacheKey(req, companyId, departmentId);
+    const { companyId, departmentId, period, startDate, endDate } = req.query as {
+      companyId?: string;
+      departmentId?: string;
+      period?: string;
+      startDate?: string;
+      endDate?: string;
+    };
+    const cacheKey = buildDashboardCacheKey(req, companyId, departmentId, period, startDate, endDate);
 
     const cachedPayload = getCachedDashboardPayload(cacheKey);
     if (cachedPayload) {
@@ -259,6 +300,67 @@ export const dashboard = async (req: Request, res: Response) => {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     const normalizedCompanyId = targetCompanyId ? new mongoose.Types.ObjectId(targetCompanyId.toString()) : null;
 
+    // 🗓️ Calculate Graph Filter Date Range
+    const now = new Date();
+    let graphStartDate: Date | null = null;
+    let graphEndDate: Date | null = new Date();
+    let groupFormat = '%Y-%m-%d';
+    let groupType: 'daily' | 'weekly' | 'monthly' = 'daily';
+
+    const normalizedPeriod = (period || 'week').toLowerCase();
+
+    if (normalizedPeriod === 'custom') {
+      if (startDate) graphStartDate = parseFlexibleDate(startDate, false);
+      if (endDate) graphEndDate = parseFlexibleDate(endDate, true) || new Date();
+      if (graphStartDate && graphEndDate) {
+        const diffMs = graphEndDate.getTime() - graphStartDate.getTime();
+        const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        if (diffDays <= 45) {
+          groupFormat = '%Y-%m-%d';
+          groupType = 'daily';
+        } else if (diffDays <= 180) {
+          groupFormat = '%Y-%m-%d';
+          groupType = 'daily';
+        } else {
+          groupFormat = '%Y-%m';
+          groupType = 'monthly';
+        }
+      }
+    } else if (normalizedPeriod === 'month') {
+      graphStartDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      graphEndDate = now;
+      groupFormat = '%Y-%m-%d';
+      groupType = 'daily';
+    } else if (normalizedPeriod === 'quarter' || normalizedPeriod === 'quarterly') {
+      graphStartDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      graphEndDate = now;
+      groupFormat = '%Y-%m-%d';
+      groupType = 'daily';
+    } else if (normalizedPeriod === 'year' || normalizedPeriod === 'yearly') {
+      graphStartDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      graphEndDate = now;
+      groupFormat = '%Y-%m';
+      groupType = 'monthly';
+    } else if (normalizedPeriod === 'all') {
+      graphStartDate = null;
+      graphEndDate = null;
+      groupFormat = '%Y-%m';
+      groupType = 'monthly';
+    } else {
+      // default: 'week'
+      graphStartDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      graphEndDate = now;
+      groupFormat = '%Y-%m-%d';
+      groupType = 'daily';
+    }
+
+    const graphDateMatch: any = {};
+    if (graphStartDate || graphEndDate) {
+      graphDateMatch.createdAt = {};
+      if (graphStartDate) graphDateMatch.createdAt.$gte = graphStartDate;
+      if (graphEndDate) graphDateMatch.createdAt.$lte = graphEndDate;
+    }
+
     // 🚀 Performance Optimization: Consolidate 35+ queries into 4 main parallel aggregation blocks
     const [
       grievanceStats,
@@ -339,6 +441,76 @@ export const dashboard = async (req: Request, res: Response) => {
               { $match: { createdAt: { $gte: sixMonthsAgo } } },
               { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } }, count: { $sum: 1 }, resolved: { $sum: { $cond: [{ $in: ['$status', [GrievanceStatus.RESOLVED, 'CLOSED']] }, 1, 0] } } } },
               { $sort: { _id: 1 } }
+            ],
+            // 📈 Filtered trend based on selected period
+            trend: [
+              ...(Object.keys(graphDateMatch).length > 0 ? [{ $match: graphDateMatch }] : []),
+              {
+                $group: {
+                  _id: { $dateToString: { format: groupFormat, date: '$createdAt' } },
+                  count: { $sum: 1 },
+                  resolved: { $sum: { $cond: [{ $in: ['$status', [GrievanceStatus.RESOLVED, 'CLOSED']] }, 1, 0] } }
+                }
+              },
+              { $sort: { _id: 1 } }
+            ],
+            // 🎯 Filtered status breakdown for selected period
+            filteredCounts: [
+              ...(Object.keys(graphDateMatch).length > 0 ? [{ $match: graphDateMatch }] : []),
+              {
+                $group: {
+                  _id: null,
+                  total: { $sum: 1 },
+                  pending: { $sum: { $cond: [{ $in: ['$status', [GrievanceStatus.PENDING, 'OPEN']] }, 1, 0] } },
+                  inProgress: { $sum: { $cond: [{ $in: ['$status', [GrievanceStatus.IN_PROGRESS, GrievanceStatus.ASSIGNED]] }, 1, 0] } },
+                  resolved: { $sum: { $cond: [{ $in: ['$status', [GrievanceStatus.RESOLVED, 'CLOSED']] }, 1, 0] } },
+                  rejected: { $sum: { $cond: [{ $eq: ['$status', GrievanceStatus.REJECTED] }, 1, 0] } },
+                  reverted: { $sum: { $cond: [{ $eq: ['$status', GrievanceStatus.REVERTED] }, 1, 0] } },
+                  pendingOverdue: { 
+                    $sum: { 
+                      $cond: [
+                        { 
+                          $and: [
+                            { $in: ['$status', [GrievanceStatus.PENDING, GrievanceStatus.ASSIGNED, GrievanceStatus.IN_PROGRESS, GrievanceStatus.REVERTED, 'OPEN']] }, 
+                            { 
+                              $gt: [
+                                { $subtract: [new Date(), "$createdAt"] },
+                                { $multiply: [{ $ifNull: ["$slaHours", 120] }, 3600000] }
+                              ]
+                            }
+                          ] 
+                        }, 
+                        1, 
+                        0
+                      ] 
+                    } 
+                  }
+                }
+              }
+            ],
+            // 🏢 Filtered department distribution for selected period
+            filteredDepartments: [
+              ...(Object.keys(graphDateMatch).length > 0 ? [{ $match: graphDateMatch }] : []),
+              {
+                $project: {
+                  deptIds: {
+                    $filter: {
+                      input: ["$departmentId", "$subDepartmentId"],
+                      as: "id",
+                      cond: { $ne: ["$$id", null] }
+                    }
+                  },
+                  status: 1
+                }
+              },
+              { $unwind: "$deptIds" },
+              { $group: { _id: "$deptIds", total: { $sum: 1 }, pending: { $sum: { $cond: [{ $in: ['$status', [GrievanceStatus.PENDING, GrievanceStatus.ASSIGNED, GrievanceStatus.IN_PROGRESS, 'OPEN']] }, 1, 0] } } } },
+              { $match: { _id: { $ne: null } } },
+              { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'dept' } },
+              { $unwind: { path: '$dept', preserveNullAndEmptyArrays: true } },
+              { $project: { departmentId: '$_id', departmentName: { $ifNull: ['$dept.name', 'Unknown'] }, parentDepartmentId: '$dept.parentDepartmentId', total: 1, pending: 1 } },
+              { $sort: { total: -1 } },
+              { $limit: 25 }
             ],
             byDepartment: [
               {
@@ -453,7 +625,7 @@ export const dashboard = async (req: Request, res: Response) => {
     ]);
 
     // Parse Aggregation Results
-    const g = grievanceStats[0] || { counts: [{}], byPriority: [], daily: [], monthly: [], byDepartment: [], avgResolution: [] };
+    const g = grievanceStats[0] || { counts: [{}], byPriority: [], daily: [], monthly: [], trend: [], filteredCounts: [], filteredDepartments: [], byDepartment: [], avgResolution: [] };
     const gCounts = g.counts[0] || {};
     const a = appointmentStats[0] || { counts: [{}], daily: [], monthly: [], byDepartment: [] };
     const aCounts = a.counts[0] || {};
@@ -511,6 +683,30 @@ export const dashboard = async (req: Request, res: Response) => {
           avgResolutionDays: g.avgResolution?.[0] ? parseFloat(g.avgResolution[0].avgDays.toFixed(1)) : 0,
           daily: g.daily.map((d: any) => ({ date: d._id, count: d.count })),
           monthly: g.monthly.map((m: any) => ({ month: m._id, count: m.count, resolved: m.resolved })),
+          trend: (g.trend || []).map((t: any) => ({ date: t._id, count: t.count, resolved: t.resolved || 0 })),
+          filteredStatus: g.filteredCounts?.[0] || {
+            total: totalGrievances,
+            pending: pendingGrievances,
+            inProgress: (gCounts.assigned || 0) + (gCounts.inProgress || 0),
+            resolved: resolvedGrievances,
+            rejected: rejectedGrievances,
+            reverted: revertedGrievances,
+            pendingOverdue: gCounts.pendingOverdue || 0
+          },
+          filteredDepartments: (g.filteredDepartments || []).map((d: any) => ({
+            departmentId: d.departmentId,
+            departmentName: d.departmentName || 'Unknown',
+            parentDepartmentId: d.parentDepartmentId,
+            total: d.total,
+            count: d.total,
+            pending: d.pending
+          })),
+          periodInfo: {
+            period: normalizedPeriod,
+            startDate: graphStartDate ? graphStartDate.toISOString() : null,
+            endDate: graphEndDate ? graphEndDate.toISOString() : null,
+            groupType
+          },
           byDepartment: g.byDepartment.map((d: any) => ({
             departmentId: d.departmentId,
             departmentName: d.departmentName || 'Unknown',
@@ -578,8 +774,8 @@ export const dashboard = async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to fetch dashboard statistics', error: error.message });
   } finally {
-    const { companyId, departmentId } = req.query;
-    const cacheKey = buildDashboardCacheKey(req, companyId, departmentId);
+    const { companyId, departmentId, period, startDate, endDate } = req.query as any;
+    const cacheKey = buildDashboardCacheKey(req, companyId, departmentId, period, startDate, endDate);
     dashboardInFlight.delete(cacheKey);
   }
 };

@@ -17,7 +17,7 @@ export function normalizeLanguage(language?: string): string {
 }
 
 export function sanitizeTemplateVariables(values: string[] = []): string[] {
-  return values.map((value) => sanitizeText(value || '', 100));
+  return values.map((value) => sanitizeText(value || '', 1000));
 }
 
 export function validateTemplateVariables(templateName: string, values: string[] = []): void {

@@ -23,6 +23,30 @@ export interface DashboardStats {
     byPriority: Array<{ priority: string; count: number }>;
     daily: Array<{ date: string; count: number }>;
     monthly: Array<{ month: string; count: number; resolved: number }>;
+    trend?: Array<{ date: string; count: number; resolved?: number }>;
+    filteredStatus?: {
+      total: number;
+      pending: number;
+      inProgress: number;
+      resolved: number;
+      rejected: number;
+      reverted: number;
+      pendingOverdue?: number;
+    };
+    filteredDepartments?: Array<{
+      departmentId: string;
+      departmentName: string;
+      parentDepartmentId?: string;
+      total: number;
+      count: number;
+      pending: number;
+    }>;
+    periodInfo?: {
+      period: string;
+      startDate: string | null;
+      endDate: string | null;
+      groupType: string;
+    };
     byDepartment: Array<{
       departmentId: string;
       departmentName: string;
@@ -60,18 +84,24 @@ export interface DashboardStats {
 interface UseDashboardStatsParams {
   companyId?: string;
   departmentId?: string;
+  period?: "week" | "month" | "quarter" | "year" | "all" | "custom";
+  startDate?: string;
+  endDate?: string;
   enabled?: boolean;
 }
 
 export function useDashboardStats(params: UseDashboardStatsParams) {
-  const { enabled = true, companyId, departmentId } = params;
+  const { enabled = true, companyId, departmentId, period, startDate, endDate } = params;
 
   return useCachedQuery<DashboardStats>({
-    queryKey: ["dashboard-stats", companyId, departmentId],
+    queryKey: ["dashboard-stats", companyId, departmentId, period || "week", startDate || "", endDate || ""],
     queryFn: async () => {
       const queryParams = new URLSearchParams();
       if (companyId) queryParams.append("companyId", companyId);
       if (departmentId) queryParams.append("departmentId", departmentId);
+      if (period) queryParams.append("period", period);
+      if (startDate) queryParams.append("startDate", startDate);
+      if (endDate) queryParams.append("endDate", endDate);
 
       const response = await apiClient.get<{
         success: boolean;

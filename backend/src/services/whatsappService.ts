@@ -208,7 +208,11 @@ async function logOutgoingMessage(
 
 function safeText(text: string, limit = 4000): string {
   if (!text) return '';
-  return text.length > limit ? text.substring(0, limit - 10) + '…' : text;
+  const collapsed = String(text)
+    .replace(/[\t\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return collapsed.length > limit ? collapsed.substring(0, limit - 10) + '…' : collapsed;
 }
 
 function sanitizeButtonReplyId(rawId: string, fallbackIndex: number): string {

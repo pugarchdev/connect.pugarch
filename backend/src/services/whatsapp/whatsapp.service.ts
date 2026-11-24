@@ -68,7 +68,8 @@ export async function sendTemplateRequest(options: {
       const isRetrying = attempt < retryCount && parsed.shouldRetry;
 
       // ❌ Essential Error Log
-      console.error(`❌ WhatsApp template "${options.logContext.templateName}" FAILED for ${options.logContext.to}: ${parsed.message}${isRetrying ? ' (Retrying...)' : ''}`);
+      const detailsMsg = parsed.details ? ` - ${parsed.details}` : '';
+      console.error(`❌ WhatsApp template "${options.logContext.templateName}" FAILED for ${options.logContext.to}: ${parsed.message}${detailsMsg}${isRetrying ? ' (Retrying...)' : ''}`);
 
       if (!parsed.shouldRetry || attempt >= retryCount) {
         throw error;

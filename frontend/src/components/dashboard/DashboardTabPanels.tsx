@@ -68,6 +68,7 @@ import { OverviewQuickActions } from "@/components/dashboard/OverviewQuickAction
 import { OverviewCompanyInfoCard } from "@/components/dashboard/OverviewCompanyInfoCard";
 import { OverviewDepartmentSummary } from "@/components/dashboard/OverviewDepartmentSummary";
 import { OverviewGrievanceKpis } from "@/components/dashboard/OverviewGrievanceKpis";
+import { AnalyticsDateFilterBar } from "@/components/dashboard/AnalyticsDateFilterBar";
 import { DashboardDialogs } from "@/components/dashboard/DashboardDialogs";
 import { LoadingDots, SortIcon } from "@/components/dashboard/DashboardPrimitives";
 import { ProfileTab } from "@/components/dashboard/tabs/ProfileTab";
@@ -247,6 +248,8 @@ type DashboardTabPanelsProps = any;
 
 export function DashboardTabPanels(props: DashboardTabPanelsProps) {
   const {
+    analyticsFilters,
+    setAnalyticsFilters,
     allDepartments,
     appointmentFilters,
     appointmentPage,
@@ -594,100 +597,143 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
               {/* Analytics Page - Role-Aware Real Analytics */}
               {(!isSuperAdminUser || (isSuperAdminUser && companyIdParam)) && (
                 <TabsContent value="analytics" className="space-y-4">
-                  {/* Header Banner */}
-
-                  
-
-                  {/* KPI Cards */}
-                  <OverviewGrievanceKpis
-                    canReadGrievance={hasModule(Module.GRIEVANCE)}
-                    loading={loadingKpiTiles}
-                    pendingCount={pendingKpiCount}
-                    overdueCount={overdueKpiCount}
-                    revertedCount={revertedKpiCount}
-                    resolvedCount={resolvedKpiCount}
-                    rejectedCount={rejectedKpiCount}
-                    totalCount={totalGrievancesKpiCount}
-                    last7DaysCount={stats?.grievances.last7Days || 0}
-                    onPendingClick={() => {
-                      setActiveTab("grievances");
-                      setGrievancePage(1);
-                      setGrievanceSearch("");
-                      setGrievanceFilters((prev) => ({ 
-                        ...prev, 
-                        status: "PENDING,IN_PROGRESS,ASSIGNED",
-                        slaStatus: "",
-                        dateRange: "",
-                        priority: "",
-                        assignmentStatus: ""
-                      }));
+                  {/* Graph & Analytics Timeline Filter Bar */}
+                  <AnalyticsDateFilterBar
+                    loading={Boolean(loadingStats)}
+                    currentFilters={{
+                      period: analyticsFilters?.period || "week",
+                      startDate: analyticsFilters?.startDate || "",
+                      endDate: analyticsFilters?.endDate || "",
                     }}
-                    onOverdueClick={() => {
-                      setActiveTab("grievances");
-                      setGrievancePage(1);
-                      setGrievanceSearch("");
-                      setGrievanceFilters((prev) => ({
-                        ...prev,
-                        status: "", // All active status
-                        slaStatus: "OVERDUE",
-                        dateRange: "",
-                        priority: "",
-                        assignmentStatus: ""
-                      }));
-                    }}
-                    onRevertedClick={() => {
-                      setActiveTab("grievances");
-                      setGrievancePage(1);
-                      setGrievanceSearch("");
-                      setGrievanceFilters((prev) => ({ 
-                        ...prev, 
-                        status: "REVERTED",
-                        slaStatus: "",
-                        dateRange: "",
-                        priority: "",
-                        assignmentStatus: ""
-                      }));
-                    }}
-                    onResolvedClick={() => {
-                      setActiveTab("grievances");
-                      setGrievancePage(1);
-                      setGrievanceSearch("");
-                      setGrievanceFilters((prev) => ({ 
-                        ...prev, 
-                        status: "RESOLVED",
-                        slaStatus: "",
-                        dateRange: "",
-                        priority: "",
-                        assignmentStatus: ""
-                      }));
-                    }}
-                    onRejectedClick={() => {
-                      setActiveTab("grievances");
-                      setGrievancePage(1);
-                      setGrievanceSearch("");
-                      setGrievanceFilters((prev) => ({ 
-                        ...prev, 
-                        status: "REJECTED",
-                        slaStatus: "",
-                        dateRange: "",
-                        priority: "",
-                        assignmentStatus: ""
-                      }));
-                    }}
-                    onTotalClick={() => {
-                      setActiveTab("grievances");
-                      setGrievancePage(1);
-                      setGrievanceSearch("");
-                      setGrievanceFilters((prev) => ({ 
-                        ...prev, 
-                        status: "ALL",
-                        slaStatus: "",
-                        dateRange: "",
-                        priority: "",
-                        assignmentStatus: ""
-                      }));
+                    onFilterChange={(newFilters) => {
+                      if (setAnalyticsFilters) {
+                        setAnalyticsFilters((prev: any) => ({
+                          ...prev,
+                          period: newFilters.period,
+                          startDate: newFilters.startDate || "",
+                          endDate: newFilters.endDate || "",
+                        }));
+                      }
                     }}
                   />
+
+                  {/* Filtered KPI Cards for Analytics Page */}
+                  {(() => {
+                    const fStatus = stats?.grievances?.filteredStatus;
+                    const hasFiltered = Boolean(fStatus && typeof fStatus.total === "number");
+
+                    const analyticsPendingCount = hasFiltered
+                      ? (fStatus.pending || 0) + (fStatus.inProgress || 0)
+                      : pendingKpiCount;
+                    const analyticsOverdueCount = hasFiltered
+                      ? (fStatus.pendingOverdue ?? 0)
+                      : overdueKpiCount;
+                    const analyticsRevertedCount = hasFiltered
+                      ? (fStatus.reverted || 0)
+                      : revertedKpiCount;
+                    const analyticsResolvedCount = hasFiltered
+                      ? (fStatus.resolved || 0)
+                      : resolvedKpiCount;
+                    const analyticsRejectedCount = hasFiltered
+                      ? (fStatus.rejected || 0)
+                      : rejectedKpiCount;
+                    const analyticsTotalCount = hasFiltered
+                      ? (fStatus.total || 0)
+                      : totalGrievancesKpiCount;
+
+                    return (
+                      <OverviewGrievanceKpis
+                        canReadGrievance={hasModule(Module.GRIEVANCE)}
+                        loading={loadingKpiTiles || loadingStats}
+                        pendingCount={analyticsPendingCount}
+                        overdueCount={analyticsOverdueCount}
+                        revertedCount={analyticsRevertedCount}
+                        resolvedCount={analyticsResolvedCount}
+                        rejectedCount={analyticsRejectedCount}
+                        totalCount={analyticsTotalCount}
+                        last7DaysCount={hasFiltered ? analyticsTotalCount : (stats?.grievances.last7Days || 0)}
+                        badgeLabel={hasFiltered ? "In Period" : "New"}
+                        onPendingClick={() => {
+                          setActiveTab("grievances");
+                          setGrievancePage(1);
+                          setGrievanceSearch("");
+                          setGrievanceFilters((prev) => ({ 
+                            ...prev, 
+                            status: "PENDING,IN_PROGRESS,ASSIGNED",
+                            slaStatus: "",
+                            dateRange: "",
+                            priority: "",
+                            assignmentStatus: ""
+                          }));
+                        }}
+                        onOverdueClick={() => {
+                          setActiveTab("grievances");
+                          setGrievancePage(1);
+                          setGrievanceSearch("");
+                          setGrievanceFilters((prev) => ({
+                            ...prev,
+                            status: "", // All active status
+                            slaStatus: "OVERDUE",
+                            dateRange: "",
+                            priority: "",
+                            assignmentStatus: ""
+                          }));
+                        }}
+                        onRevertedClick={() => {
+                          setActiveTab("grievances");
+                          setGrievancePage(1);
+                          setGrievanceSearch("");
+                          setGrievanceFilters((prev) => ({ 
+                            ...prev, 
+                            status: "REVERTED",
+                            slaStatus: "",
+                            dateRange: "",
+                            priority: "",
+                            assignmentStatus: ""
+                          }));
+                        }}
+                        onResolvedClick={() => {
+                          setActiveTab("grievances");
+                          setGrievancePage(1);
+                          setGrievanceSearch("");
+                          setGrievanceFilters((prev) => ({ 
+                            ...prev, 
+                            status: "RESOLVED",
+                            slaStatus: "",
+                            dateRange: "",
+                            priority: "",
+                            assignmentStatus: ""
+                          }));
+                        }}
+                        onRejectedClick={() => {
+                          setActiveTab("grievances");
+                          setGrievancePage(1);
+                          setGrievanceSearch("");
+                          setGrievanceFilters((prev) => ({ 
+                            ...prev, 
+                            status: "REJECTED",
+                            slaStatus: "",
+                            dateRange: "",
+                            priority: "",
+                            assignmentStatus: ""
+                          }));
+                        }}
+                        onTotalClick={() => {
+                          setActiveTab("grievances");
+                          setGrievancePage(1);
+                          setGrievanceSearch("");
+                          setGrievanceFilters((prev) => ({ 
+                            ...prev, 
+                            status: "ALL",
+                            slaStatus: "",
+                            dateRange: "",
+                            priority: "",
+                            assignmentStatus: ""
+                          }));
+                        }}
+                      />
+                    );
+                  })()}
 
                   <OverviewAppointmentCards
                     visible={Boolean(canShowAppointmentsInView && isViewingCompany)}
@@ -709,87 +755,155 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             </div>
                             <div>
                               <h3 className="text-sm font-bold text-slate-800">
-                              Grievance Trend
+                                Grievance Trend
                               </h3>
                               <p className="text-[14px] text-slate-400">
-                                Last 7 days activity
+                                {(() => {
+                                  const p = analyticsFilters?.period || "week";
+                                  if (p === "week") return "Last 7 days activity";
+                                  if (p === "month") return "Last 30 days activity";
+                                  if (p === "quarter") return "Last 90 days (Quarterly) activity";
+                                  if (p === "year") return "Last 12 months (Yearly) activity";
+                                  if (p === "all") return "All-time activity";
+                                  if (p === "custom" && analyticsFilters?.startDate && analyticsFilters?.endDate) {
+                                    return `${analyticsFilters.startDate} to ${analyticsFilters.endDate} activity`;
+                                  }
+                                  return "Activity Trend";
+                                })()}
                               </p>
                             </div>
                           </div>
+                          {(() => {
+                            if (loadingStats) {
+                              return <Skeleton className="h-6 w-20 rounded-lg" />;
+                            }
+                            const rawList = (stats?.grievances?.trend && stats.grievances.trend.length > 0)
+                              ? stats.grievances.trend
+                              : (stats?.grievances?.daily || []);
+                            const sumPeriod = rawList.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-bold text-slate-500 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
+                                  In Period: <strong className="text-indigo-600 font-black">{sumPeriod}</strong>
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div className="p-4 flex-1">
-                          {stats?.grievances.daily &&
-                          stats.grievances.daily.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={140}>
-                              <AreaChart
-                                data={stats.grievances.daily
-                                  .slice(-7)
-                                  .map((d) => ({
-                                    name: new Date(d.date).toLocaleDateString(
-                                      "en-IN",
-                                      { weekday: "short" },
-                                    ),
-                                    count: d.count,
-                                  }))}
-                              >
-                                <defs>
-                                  <linearGradient
-                                    id="grievanceGrad"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                  >
-                                    <stop
-                                      offset="5%"
-                                      stopColor="#6366f1"
-                                      stopOpacity={0.15}
-                                    />
-                                    <stop
-                                      offset="95%"
-                                      stopColor="#6366f1"
-                                      stopOpacity={0}
-                                    />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  stroke="#f1f5f9"
-                                />
-                                <XAxis
-                                  dataKey="name"
-                                  tick={{ fontSize: 14, fill: "#94a3b8" }}
-                                  tickMargin={4}
-                                />
-                                <YAxis
-                                  tick={{ fontSize: 14, fill: "#94a3b8" }}
-                                  allowDecimals={false}
-                                  width={30}
-                                />
-                                <Tooltip
-                                  contentStyle={{
-                                    borderRadius: "12px",
-                                    border: "1px solid #e2e8f0",
-                                    fontSize: "14px",
-                                  }}
-                                />
-                                <Area
-                                  type="monotone"
-                                  dataKey="count"
-                                  stroke="#6366f1"
-                                  strokeWidth={2.5}
-                                  fillOpacity={1}
-                                  fill="url(#grievanceGrad)"
-                                  name="Grievances"
-                                />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="h-[140px] flex flex-col items-center justify-center text-slate-400 border border-dashed rounded-lg border-slate-200">
-                              <TrendingUp className="w-8 h-8 mb-2 opacity-30" />
-                              <p className="text-sm">No trend data</p>
-                            </div>
-                          )}
+                          {(() => {
+                            if (loadingStats) {
+                              return (
+                                <div className="h-[150px] flex flex-col items-center justify-center gap-2.5 text-indigo-500">
+                                  <div className="w-8 h-8 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
+                                  <span className="text-xs font-bold text-slate-400 animate-pulse">Loading trend activity...</span>
+                                </div>
+                              );
+                            }
+
+                            const rawList = (stats?.grievances?.trend && stats.grievances.trend.length > 0)
+                              ? stats.grievances.trend
+                              : (stats?.grievances?.daily ? stats.grievances.daily.slice(-7) : []);
+
+                            const pType = analyticsFilters?.period || "week";
+                            const formattedTrend = rawList.map((d: any) => {
+                              const dateVal = d.date || d._id || "";
+                              let label = dateVal;
+                              try {
+                                if (dateVal.length === 7) {
+                                  const [y, m] = dateVal.split("-");
+                                  const dObj = new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1);
+                                  label = dObj.toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
+                                } else if (dateVal) {
+                                  const dObj = new Date(dateVal);
+                                  if (pType === "week") {
+                                    label = dObj.toLocaleDateString("en-IN", { weekday: "short" });
+                                  } else if (pType === "month") {
+                                    label = dObj.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                                  } else {
+                                    label = dObj.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                                  }
+                                }
+                              } catch (e) {
+                                label = dateVal;
+                              }
+                              return {
+                                name: label,
+                                rawDate: dateVal,
+                                count: d.count || 0,
+                                resolved: d.resolved || 0,
+                              };
+                            });
+
+                            return formattedTrend.length > 0 ? (
+                              <ResponsiveContainer width="100%" height={150}>
+                                <AreaChart data={formattedTrend}>
+                                  <defs>
+                                    <linearGradient
+                                      id="grievanceGrad"
+                                      x1="0"
+                                      y1="0"
+                                      x2="0"
+                                      y2="1"
+                                    >
+                                      <stop
+                                        offset="5%"
+                                        stopColor="#6366f1"
+                                        stopOpacity={0.18}
+                                      />
+                                      <stop
+                                        offset="95%"
+                                        stopColor="#6366f1"
+                                        stopOpacity={0}
+                                      />
+                                    </linearGradient>
+                                  </defs>
+                                  <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    stroke="#f1f5f9"
+                                  />
+                                  <XAxis
+                                    dataKey="name"
+                                    tick={{ fontSize: 13, fill: "#94a3b8", fontWeight: 700 }}
+                                    tickMargin={6}
+                                  />
+                                  <YAxis
+                                    tick={{ fontSize: 13, fill: "#94a3b8", fontWeight: 700 }}
+                                    allowDecimals={false}
+                                    width={32}
+                                  />
+                                  <Tooltip
+                                    contentStyle={{
+                                      borderRadius: "12px",
+                                      border: "1px solid #e2e8f0",
+                                      fontSize: "13px",
+                                      fontWeight: "bold",
+                                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                                    }}
+                                    formatter={(value: any) => [`${value} Grievances`, "Volume"]}
+                                    labelFormatter={(label, items) => {
+                                      const raw = items?.[0]?.payload?.rawDate;
+                                      return raw ? `Date: ${raw} (${label})` : String(label);
+                                    }}
+                                  />
+                                  <Area
+                                    type="monotone"
+                                    dataKey="count"
+                                    stroke="#6366f1"
+                                    strokeWidth={2.5}
+                                    fillOpacity={1}
+                                    fill="url(#grievanceGrad)"
+                                    name="Grievances"
+                                  />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            ) : (
+                              <div className="h-[150px] flex flex-col items-center justify-center text-slate-400 border border-dashed rounded-lg border-slate-200">
+                                <TrendingUp className="w-8 h-8 mb-2 opacity-30" />
+                                <p className="text-sm font-semibold">No activity recorded in this period</p>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     )}
@@ -806,49 +920,64 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               <h3 className="text-[14px] font-black text-slate-800 uppercase tracking-tight leading-none">
                                 Grievance Operational Status
                               </h3>
-                              <p className="text-[15px] text-slate-400 font-bold uppercase tracking-tighter mt-0.5">
-                                Real-time efficiency
+                              <p className="text-[13px] text-slate-400 font-bold uppercase tracking-tighter mt-0.5">
+                                {analyticsFilters?.period && analyticsFilters.period !== "all" 
+                                  ? `${analyticsFilters.period.toUpperCase()} Efficiency` 
+                                  : "Real-time efficiency"}
                               </p>
                             </div>
                           </div>
                         </div>
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           {(() => {
+                            if (loadingStats) {
+                              return (
+                                <div className="h-[220px] flex flex-col items-center justify-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full border-2 border-purple-200 border-t-purple-600 animate-spin" />
+                                  <span className="text-xs font-bold text-slate-400 animate-pulse">Calculating operational status...</span>
+                                </div>
+                              );
+                            }
+
+                            const statusSrc = stats?.grievances?.filteredStatus || stats?.grievances;
                             const chart = [
                               {
                                 name: "Pending",
-                                value: stats?.grievances.pending || 0,
+                                value: statusSrc?.pending || 0,
                                 color: "#f59e0b",
                                 subText: "Awaiting assignment",
                               },
                               {
                                 name: "In Progress",
                                 value:
-                                  stats?.grievances.assigned ||
-                                  stats?.grievances.inProgress ||
+                                  statusSrc?.inProgress ||
+                                  statusSrc?.assigned ||
                                   0,
                                 color: "#6366f1",
                                 subText: "Active resolution",
                               },
                               {
                                 name: "Resolved",
-                                value: stats?.grievances.resolved || 0,
+                                value: statusSrc?.resolved || 0,
                                 color: "#10b981",
                                 subText: "Completed cases",
                               },
                               {
                                 name: "Rejected",
-                                value: stats?.grievances.rejected || 0,
+                                value: statusSrc?.rejected || 0,
                                 color: "#ef4444",
                                 subText: "Closed without resolution",
                               },
                               {
                                 name: "Reverted",
-                                value: stats?.grievances.reverted || 0,
+                                value: statusSrc?.reverted || 0,
                                 color: "#0ea5e9",
                                 subText: "Reassigned cases",
                               },
                             ].filter((d) => d.value > 0);
+
+                            const donutTotal = statusSrc?.total ?? totalRegisteredGrievances;
+
                             return chart.length > 0 ? (
                               <>
                                 <div className="relative h-[120px]">
@@ -889,9 +1018,9 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                   </ResponsiveContainer>
                                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                     <span className="text-xl font-black text-slate-900 tracking-tighter">
-                                      {totalRegisteredGrievances}
+                                      {donutTotal}
                                     </span>
-                                    <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                                    <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
                                       Total
                                     </span>
                                   </div>
@@ -930,7 +1059,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                           <p className="text-[14px] font-black text-slate-700 uppercase tracking-tighter leading-none">
                                             {d.name}
                                           </p>
-                                          <p className="text-[14px] text-slate-400 group-hover:text-slate-500 transition-colors mt-0.5">
+                                          <p className="text-[13px] text-slate-400 group-hover:text-slate-500 transition-colors mt-0.5">
                                             {d.subText}
                                           </p>
                                         </div>
@@ -939,14 +1068,9 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                         <p className="text-[15px] font-black text-slate-900 leading-none">
                                           {d.value}
                                         </p>
-                                        <p className="text-[14px] font-bold text-slate-400 mt-0.5">
+                                        <p className="text-[13px] font-bold text-slate-400 mt-0.5">
                                           {(
-                                            (d.value /
-                                              (stats?.grievances
-                                                .registeredTotal ||
-                                                stats?.grievances.total ||
-                                                1)) *
-                                            100
+                                            (d.value / Math.max(1, donutTotal)) * 100
                                           ).toFixed(0)}
                                           %
                                         </p>
@@ -957,7 +1081,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               </>
                             ) : (
                               <div className="h-[120px] flex items-center justify-center text-slate-400 text-sm border border-dashed rounded-lg border-slate-200">
-                                No data
+                                No data for this period
                               </div>
                             );
                           })()}
@@ -1027,8 +1151,23 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                         </div>
                         <div className="p-4 flex-1 overflow-hidden">
                           {(() => {
-                            // Logic for filtering chart data
-                            const filteredData = departmentData.filter((d: any) => {
+                            if (loadingStats) {
+                              return (
+                                <div className="h-[240px] flex flex-col items-center justify-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full border-2 border-rose-200 border-t-rose-600 animate-spin" />
+                                  <span className="text-xs font-bold text-slate-400 animate-pulse">Loading department breakdown...</span>
+                                </div>
+                              );
+                            }
+
+                            // Logic for filtering chart data (uses filtered departments if time-filter is active)
+                            const sourceDeptList = (analyticsFilters?.period && analyticsFilters.period !== "all" && Array.isArray(stats?.grievances?.filteredDepartments))
+                              ? stats.grievances.filteredDepartments
+                              : ((stats?.grievances?.filteredDepartments && stats.grievances.filteredDepartments.length > 0)
+                                ? stats.grievances.filteredDepartments
+                                : departmentData);
+
+                            const filteredData = sourceDeptList.filter((d: any) => {
                               const deptId = d.departmentId || d._id || "";
                               const parentId = d.parentDepartmentId || "";
                               
@@ -1049,7 +1188,10 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
 
                               // By default, show only main departments
                               return !parentId;
-                            }).sort((a, b) => b.count - a.count);
+                            }).map((d: any) => ({
+                              ...d,
+                              count: d.count ?? d.total ?? 0,
+                            })).sort((a: any, b: any) => b.count - a.count);
 
                             const chartHeight = Math.max(240, filteredData.length * 45);
 

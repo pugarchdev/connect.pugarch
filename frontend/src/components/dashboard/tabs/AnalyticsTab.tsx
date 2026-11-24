@@ -46,13 +46,25 @@ const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 export default function AnalyticsTab({ companyId }: { companyId?: string | null }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [selectedRange, setSelectedRange] = useState<string>("7d");
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
-        const url = companyId ? `/analytics/dashboard?companyId=${companyId}` : "/analytics/dashboard";
+        const rangeMap: Record<string, string> = {
+          "24h": "week",
+          "7d": "week",
+          "30d": "month",
+          "1y": "year"
+        };
+        const periodParam = rangeMap[selectedRange] || "week";
+        const queryParams = new URLSearchParams();
+        if (companyId) queryParams.append("companyId", companyId);
+        queryParams.append("period", periodParam);
+
+        const url = `/analytics/dashboard?${queryParams.toString()}`;
         const response = await apiClient.get(url);
         if (response.success) {
           setStats(response.data);
@@ -65,7 +77,7 @@ export default function AnalyticsTab({ companyId }: { companyId?: string | null 
     };
 
     fetchAnalytics();
-  }, [companyId]);
+  }, [companyId, selectedRange]);
 
   if (loading) {
     return (
@@ -100,7 +112,11 @@ export default function AnalyticsTab({ companyId }: { companyId?: string | null 
         </div>
         <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
            {["24h", "7d", "30d", "1y"].map(range => (
-             <button key={range} className={`px-4 py-2 rounded-xl text-[14px] font-black uppercase tracking-widest transition-all ${range === "7d" ? "bg-white text-indigo-600 shadow-lg shadow-indigo-600/10 border border-indigo-100" : "text-slate-400 hover:text-slate-600"}`}>
+             <button 
+               key={range} 
+               onClick={() => setSelectedRange(range)}
+               className={`px-4 py-2 rounded-xl text-[14px] font-black uppercase tracking-widest transition-all ${range === selectedRange ? "bg-white text-indigo-600 shadow-lg shadow-indigo-600/10 border border-indigo-100" : "text-slate-400 hover:text-slate-600"}`}
+             >
                {range}
              </button>
            ))}
@@ -133,14 +149,14 @@ export default function AnalyticsTab({ companyId }: { companyId?: string | null 
           <CardHeader className="flex flex-row items-center justify-between pb-8">
             <div className="flex flex-col">
               <CardTitle className="text-sm font-black text-slate-900 uppercase tracking-widest">Incident Propagation</CardTitle>
-              <CardDescription className="text-[14px] font-bold uppercase tracking-widest mt-1">7-Day Transactional Volume Analytics</CardDescription>
+              <CardDescription className="text-[14px] font-bold uppercase tracking-widest mt-1">Transactional Volume Analytics ({selectedRange})</CardDescription>
             </div>
             <BarChart2 className="w-5 h-5 text-indigo-600 opacity-20" />
           </CardHeader>
           <CardContent>
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats?.grievances?.daily || []}>
+                <AreaChart data={stats?.grievances?.trend && stats.grievances.trend.length > 0 ? stats.grievances.trend : (stats?.grievances?.daily || [])}>
                   <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
