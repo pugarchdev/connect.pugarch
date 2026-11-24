@@ -147,6 +147,22 @@ router.post('/', requireDatabaseConnection, async (req: Request, res: Response) 
         const value = change.value;
         const metadata = value?.metadata;
 
+        // Process message delivery statuses (sent, delivered, read, failed)
+        if (value?.statuses && Array.isArray(value.statuses)) {
+          for (const status of value.statuses) {
+            if (status.status === 'failed') {
+              logger.error(`❌ [WhatsApp Webhook] Message delivery failed for ${status.recipient_id}`, {
+                messageId: status.id,
+                status: status.status,
+                errors: status.errors,
+                timestamp: status.timestamp
+              });
+            } else {
+              logger.info(`📊 [WhatsApp Webhook] Message status '${status.status}' for ${status.recipient_id} (${status.id})`);
+            }
+          }
+        }
+
         if (!value?.messages) {
           continue;
         }

@@ -224,6 +224,18 @@ function sanitizeButtonReplyId(rawId: string, fallbackIndex: number): string {
   return candidate.slice(0, 256);
 }
 
+function sanitizeButtonTitle(title: string, limit = WHATSAPP_LIMITS_BUTTONS.BUTTON_TITLE_MAX_LENGTH): string {
+  if (!title) return '';
+  const withoutEmojis = String(title)
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '')
+    .replace(/[\uFE00-\uFE0F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const cleaned = withoutEmojis || String(title).replace(/\s+/g, ' ').trim();
+  return safeText(cleaned, limit);
+}
+
 function buildComplianceFooter(): string {
   return [
     'This is an official government assistance chatbot.',
@@ -925,7 +937,7 @@ export async function sendWhatsAppButtons(
         type: 'reply',
         reply: {
           id: sanitizeButtonReplyId(btn?.id || btn?.title || '', index),
-          title: safeText((btn?.title || '').trim(), WHATSAPP_LIMITS_BUTTONS.BUTTON_TITLE_MAX_LENGTH)
+          title: sanitizeButtonTitle(btn?.title || '')
         }
       }))
       .filter((btn) => Boolean(btn.reply.title));
