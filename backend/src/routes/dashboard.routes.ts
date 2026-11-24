@@ -328,6 +328,305 @@ router.get('/superadmin/message-analytics', authenticate, requireSuperAdminDashb
   }
 });
 
+// SuperAdmin Meta WhatsApp Cost Calculator (Official Meta rates, Free 1000 Service msgs/month, Company-wise cost)
+router.get('/superadmin/meta-cost-calculator', authenticate, requireSuperAdminDashboard, async (req: Request, res: Response) => {
+  try {
+    // 1. Official Meta 2024/2025 default rates (India INR)
+    const serviceRate = req.query.serviceRate ? parseFloat(req.query.serviceRate as string) : 0.1150;
+    const utilityRate = req.query.utilityRate ? parseFloat(req.query.utilityRate as string) : 0.1150;
+    const authRate = req.query.authRate ? parseFloat(req.query.authRate as string) : 0.1150;
+    const marketingRate = req.query.marketingRate ? parseFloat(req.query.marketingRate as string) : 0.8631;
+    const baseFreeQuota = req.query.freeQuota !== undefined ? parseInt(req.query.freeQuota as string, 10) : 1000;
+    const gstPct = req.query.gstRate !== undefined ? parseFloat(req.query.gstRate as string) : 18;
+
+    // 2. Fetch companies & whatsapp configs & templates
+    const companies = await Company.find({}).select('_id name companyId isActive').sort({ name: 1 }).lean();
+    const waConfigs = await CompanyWhatsAppConfig.find({}).select('companyId phoneNumber displayPhoneNumber stats').lean();
+    const configByCompany = new Map<string, any>();
+    for (const cfg of waConfigs) {
+      if (cfg.companyId) {
+        configByCompany.set(String(cfg.companyId), cfg);
+      }
+    }
+
+    const templates = await WhatsAppTemplate.find({}).select('name category companyId').lean();
+    const templateCategoryMap = new Map<string, string>();
+    for (const tmpl of templates) {
+      if (tmpl.name) {
+        templateCategoryMap.set(tmpl.name.toLowerCase().trim(), tmpl.category || 'UTILITY');
+        if (tmpl.companyId) {
+          templateCategoryMap.set(`${String(tmpl.companyId)}:${tmpl.name.toLowerCase().trim()}`, tmpl.category || 'UTILITY');
+        }
+      }
+    }
+
+    const { period, startDate, endDate, companyId: targetCompanyId } = req.query as {
+      period?: string;
+      startDate?: string;
+      endDate?: string;
+      companyId?: string;
+    };
+
+    // Calculate free tier factor based on period / dates
+    let monthsFactor = 1;
+    const now = new Date();
+    if (startDate && endDate) {
+      const pStart = parseFlexibleDate(startDate, false);
+      const pEnd = parseFlexibleDate(endDate, true);
+      if (pStart && pEnd) {
+        const diffDays = Math.max(1, Math.ceil((pEnd.getTime() - pStart.getTime()) / (1000 * 60 * 60 * 24)));
+        monthsFactor = Math.max(1, Math.round(diffDays / 30));
+      }
+    } else if (period === 'quarterly') {
+      monthsFactor = 3;
+    } else if (period === 'yearly') {
+      monthsFactor = 12;
+    }
+    const effectiveFreeQuota = baseFreeQuota * monthsFactor;
+
+    // Date range filtering
+    const logQuery: any = {
+      action: 'WHATSAPP_MSG',
+      resource: 'OUTGOING'
+    };
+
+    if (targetCompanyId && targetCompanyId !== 'all') {
+      const matchingComp = companies.find(c => String(c._id) === targetCompanyId || c.companyId === targetCompanyId);
+      if (matchingComp) {
+        logQuery.companyId = matchingComp._id;
+      } else {
+        logQuery.companyId = targetCompanyId;
+      }
+    }
+
+    const dateFilter: { $gte?: Date; $lte?: Date } = {};
+    if (startDate || endDate) {
+      const parsedStart = parseFlexibleDate(startDate, false);
+      const parsedEnd = parseFlexibleDate(endDate, true);
+      if (parsedStart) dateFilter.$gte = parsedStart;
+      if (parsedEnd) dateFilter.$lte = parsedEnd;
+    } else if (period && period !== 'all') {
+      if (period === 'daily') {
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        dateFilter.$gte = startOfToday;
+      } else if (period === 'weekly') {
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+        dateFilter.$gte = sevenDaysAgo;
+      } else if (period === 'monthly') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        dateFilter.$gte = startOfMonth;
+      } else if (period === 'quarterly') {
+        const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        ninetyDaysAgo.setHours(0, 0, 0, 0);
+        dateFilter.$gte = ninetyDaysAgo;
+      } else if (period === 'yearly') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+        dateFilter.$gte = startOfYear;
+      }
+    }
+
+    if (Object.keys(dateFilter).length > 0) {
+      logQuery.timestamp = dateFilter;
+    }
+
+    const outgoingLogs = await AuditLog.find(logQuery).select('companyId details timestamp').lean();
+
+    type CategoryCounts = {
+      utility: number;
+      service: number;
+      authentication: number;
+      marketing: number;
+      total: number;
+      lastMessageAt?: Date | null;
+    };
+
+    const companyStatsMap = new Map<string, CategoryCounts>();
+    for (const comp of companies) {
+      companyStatsMap.set(String(comp._id), {
+        utility: 0,
+        service: 0,
+        authentication: 0,
+        marketing: 0,
+        total: 0,
+        lastMessageAt: null
+      });
+    }
+
+    for (const log of outgoingLogs) {
+      const cId = log.companyId ? String(log.companyId) : 'unknown';
+      let stats = companyStatsMap.get(cId);
+      if (!stats) {
+        stats = { utility: 0, service: 0, authentication: 0, marketing: 0, total: 0, lastMessageAt: null };
+        companyStatsMap.set(cId, stats);
+      }
+
+      const details = log.details || {};
+      let cat = (details.category || '').toUpperCase();
+
+      if (!cat) {
+        if (details.type === 'template') {
+          const tmplName = (details.templateName || '').toLowerCase().trim();
+          const lookupKey = `${cId}:${tmplName}`;
+          if (templateCategoryMap.has(lookupKey)) {
+            cat = templateCategoryMap.get(lookupKey)!;
+          } else if (templateCategoryMap.has(tmplName)) {
+            cat = templateCategoryMap.get(tmplName)!;
+          } else if (tmplName.includes('otp') || tmplName.includes('auth') || tmplName.includes('verify') || tmplName.includes('password')) {
+            cat = 'AUTHENTICATION';
+          } else {
+            cat = 'UTILITY';
+          }
+        } else {
+          cat = 'SERVICE';
+        }
+      }
+
+      if (cat === 'AUTHENTICATION') {
+        stats.authentication += 1;
+      } else if (cat === 'MARKETING') {
+        stats.marketing += 1;
+      } else if (cat === 'UTILITY') {
+        stats.utility += 1;
+      } else {
+        stats.service += 1;
+      }
+
+      stats.total += 1;
+      if (log.timestamp && (!stats.lastMessageAt || new Date(log.timestamp) > new Date(stats.lastMessageAt))) {
+        stats.lastMessageAt = log.timestamp;
+      }
+    }
+
+    let targetCompanies = companies;
+    if (targetCompanyId && targetCompanyId !== 'all') {
+      const filtered = companies.filter(
+        (c) => String(c._id) === targetCompanyId || c.companyId === targetCompanyId
+      );
+      if (filtered.length > 0) targetCompanies = filtered;
+    }
+
+    const isFiltered = Boolean((period && period !== 'all') || startDate || endDate);
+
+    // Compute detailed cost per company
+    const breakdown = targetCompanies.map((comp) => {
+      const cId = String(comp._id);
+      const s = companyStatsMap.get(cId) || { utility: 0, service: 0, authentication: 0, marketing: 0, total: 0, lastMessageAt: null };
+      const cfg = configByCompany.get(cId);
+
+      let total = s.total;
+      let service = s.service;
+      if (!isFiltered && cfg?.stats?.totalMessagesSent && cfg.stats.totalMessagesSent > total) {
+        const diff = cfg.stats.totalMessagesSent - total;
+        service += diff;
+        total = cfg.stats.totalMessagesSent;
+      }
+
+      // Meta Free Tier logic: 1000 free Service messages per month
+      const freeServiceUsed = Math.min(service, effectiveFreeQuota);
+      const billableService = Math.max(0, service - freeServiceUsed);
+      const serviceCost = Number((billableService * serviceRate).toFixed(4));
+      const utilityCost = Number((s.utility * utilityRate).toFixed(4));
+      const authCost = Number((s.authentication * authRate).toFixed(4));
+      const marketingCost = Number((s.marketing * marketingRate).toFixed(4));
+      const subtotalCost = Number((serviceCost + utilityCost + authCost + marketingCost).toFixed(2));
+      const gstCost = Number(((subtotalCost * gstPct) / 100).toFixed(2));
+      const totalCost = Number((subtotalCost + gstCost).toFixed(2));
+      const savings = Number((freeServiceUsed * serviceRate).toFixed(2));
+      const effectiveCostPerMsg = total > 0 ? Number((totalCost / total).toFixed(4)) : 0;
+
+      return {
+        _id: comp._id,
+        name: comp.name,
+        companyId: comp.companyId,
+        isActive: comp.isActive,
+        phoneNumber: cfg?.displayPhoneNumber || cfg?.phoneNumber || null,
+        utility: s.utility,
+        service: service,
+        authentication: s.authentication,
+        marketing: s.marketing,
+        total: total,
+        freeQuota: effectiveFreeQuota,
+        freeServiceUsed,
+        billableService,
+        serviceCost,
+        utilityCost,
+        authCost,
+        marketingCost,
+        subtotalCost,
+        gstCost,
+        totalCost,
+        savings,
+        effectiveCostPerMsg,
+        lastMessageAt: s.lastMessageAt || cfg?.stats?.lastMessageAt || null
+      };
+    });
+
+    const finalTotals = breakdown.reduce(
+      (acc, c) => ({
+        utility: acc.utility + c.utility,
+        service: acc.service + c.service,
+        authentication: acc.authentication + c.authentication,
+        marketing: acc.marketing + c.marketing,
+        total: acc.total + c.total,
+        freeServiceUsed: acc.freeServiceUsed + c.freeServiceUsed,
+        billableService: acc.billableService + c.billableService,
+        serviceCost: Number((acc.serviceCost + c.serviceCost).toFixed(2)),
+        utilityCost: Number((acc.utilityCost + c.utilityCost).toFixed(2)),
+        authCost: Number((acc.authCost + c.authCost).toFixed(2)),
+        marketingCost: Number((acc.marketingCost + c.marketingCost).toFixed(2)),
+        subtotalCost: Number((acc.subtotalCost + c.subtotalCost).toFixed(2)),
+        gstCost: Number((acc.gstCost + c.gstCost).toFixed(2)),
+        totalCost: Number((acc.totalCost + c.totalCost).toFixed(2)),
+        savings: Number((acc.savings + c.savings).toFixed(2))
+      }),
+      {
+        utility: 0,
+        service: 0,
+        authentication: 0,
+        marketing: 0,
+        total: 0,
+        freeServiceUsed: 0,
+        billableService: 0,
+        serviceCost: 0,
+        utilityCost: 0,
+        authCost: 0,
+        marketingCost: 0,
+        subtotalCost: 0,
+        gstCost: 0,
+        totalCost: 0,
+        savings: 0
+      }
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        rates: {
+          serviceRate,
+          utilityRate,
+          authRate,
+          marketingRate,
+          freeQuota: effectiveFreeQuota,
+          baseMonthlyQuota: baseFreeQuota,
+          monthsFactor,
+          gstPct,
+          currency: 'INR',
+          currencySymbol: '₹'
+        },
+        totals: finalTotals,
+        companies: breakdown
+      }
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to calculate meta message costs',
+      error: error.message
+    });
+  }
+});
+
 // Company Admin Dashboard - SuperAdmin and CompanyAdmin can access
 router.get('/company-admin', authenticate, requireCompanyAdminDashboard, async (req: Request, res: Response) => {
   try {

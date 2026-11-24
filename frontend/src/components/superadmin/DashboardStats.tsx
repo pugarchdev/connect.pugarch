@@ -162,7 +162,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       </Card>
 
       {/* 4. Service Messages */}
-      <Card className="group relative overflow-hidden bg-white border border-sky-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl flex flex-col justify-between min-h-[142px]">
+      <Card
+        className="group relative overflow-hidden bg-white border border-sky-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl flex flex-col justify-between min-h-[142px] cursor-pointer"
+        onClick={() => setActiveTab("cost-calculator")}
+        title="View Meta Cost & Billing Breakdown"
+      >
         <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
           <MessageSquare className="w-20 h-20 text-sky-600 -mr-6 -mt-6 rotate-12" />
         </div>
@@ -199,7 +203,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       </Card>
 
       {/* 5. Utility Messages */}
-      <Card className="group relative overflow-hidden bg-white border border-emerald-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl flex flex-col justify-between min-h-[142px]">
+      <Card
+        className="group relative overflow-hidden bg-white border border-emerald-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl flex flex-col justify-between min-h-[142px] cursor-pointer"
+        onClick={() => setActiveTab("cost-calculator")}
+        title="View Meta Cost & Billing Breakdown"
+      >
         <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
           <Zap className="w-20 h-20 text-emerald-600 -mr-6 -mt-6 rotate-12" />
         </div>
@@ -236,7 +244,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       </Card>
 
       {/* 6. Authentication */}
-      <Card className="group relative overflow-hidden bg-white border border-purple-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl flex flex-col justify-between min-h-[142px]">
+      <Card
+        className="group relative overflow-hidden bg-white border border-purple-100 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 rounded-2xl flex flex-col justify-between min-h-[142px] cursor-pointer"
+        onClick={() => setActiveTab("cost-calculator")}
+        title="View Meta Cost & Billing Breakdown"
+      >
         <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
           <Lock className="w-20 h-20 text-purple-600 -mr-6 -mt-6 rotate-12" />
         </div>

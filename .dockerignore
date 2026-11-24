@@ -1,0 +1,49 @@
+# Version control
+.git
+.gitignore
+.agent
+
+# Node dependencies & cache
+node_modules
+*/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js build output & cache
+frontend/.next
+frontend/out
+frontend/tsconfig.tsbuildinfo
+.next
+
+# Backend build output & test
+backend/dist
+backend/coverage
+backend/tsconfig.tsbuildinfo
+dist
+
+# Environment variables & secrets (CRUCIAL for security)
+.env
+.env*
+!*.env.example
+backend/.env
+backend/.env*
+frontend/.env
+frontend/.env*
+*.pem
+*.key
+gcs-service-account.json
+*-service-account*.json
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.swp
+*.swo
+
+# Temporary logs & scratch
+logs
+*.log
+brain

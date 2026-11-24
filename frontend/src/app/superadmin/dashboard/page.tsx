@@ -30,6 +30,7 @@ import RecentActivityPanel from "@/components/dashboard/RecentActivityPanel";
 import DashboardStats from "@/components/superadmin/DashboardStats";
 import CompanyTabContent from "@/components/superadmin/CompanyTabContent";
 import UserTabContent from "@/components/superadmin/UserTabContent";
+import MetaCostCalculator from "@/components/superadmin/MetaCostCalculator";
 import { NotificationPopover } from "@/components/dashboard/NotificationPopover";
 import {
   Shield,
@@ -45,6 +46,7 @@ import {
   Terminal,
   User as UserIcon,
   Power,
+  Calculator,
 } from "lucide-react";
 
 // Helper function to get company display text
@@ -55,6 +57,7 @@ const DASHBOARD_TABS = [
   { val: "overview", label: "Overview", icon: BarChart2 },
   { val: "companies", label: "Companies", icon: Building },
   { val: "users", label: "Users", icon: Users },
+  { val: "cost-calculator", label: "Cost Calculator", icon: Calculator },
 ];
 
 const VALID_SUPERADMIN_TABS = DASHBOARD_TABS.map(t => t.val);
@@ -716,6 +719,12 @@ function SuperAdminDashboardContent() {
                 onRefresh={fetchUsers}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="cost-calculator" className="space-y-6 outline-none">
+            <MetaCostCalculator
+              onOpenCompanyDashboard={handleOpenCompanyDashboard}
+            />
           </TabsContent>
         </Tabs>
 

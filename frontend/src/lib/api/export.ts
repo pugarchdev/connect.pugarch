@@ -1,11 +1,24 @@
 import { apiClient } from './client';
 
+const resolveExportUrl = (path: string): URL => {
+  const rawBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  if (rawBase.startsWith('http://') || rawBase.startsWith('https://')) {
+    return new URL(`${rawBase}${path}`);
+  }
+  const origin = typeof window !== 'undefined' && window.location?.origin
+    ? window.location.origin
+    : 'http://localhost:3000';
+  const cleanBase = rawBase.startsWith('/') ? rawBase : `/${rawBase}`;
+  return new URL(`${cleanBase}${path}`, origin);
+};
+
 export const exportAPI = {
   /**
    * Export companies (SuperAdmin only)
    */
   exportCompanies: async (): Promise<void> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/export/companies`, {
+    const url = resolveExportUrl('/export/companies');
+    const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
@@ -16,13 +29,13 @@ export const exportAPI = {
     }
 
     const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+    const blobUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
+    a.href = blobUrl;
     a.download = `companies-export-${new Date().toISOString().split('T')[0]}.xlsx`;
     document.body.appendChild(a);
     a.click();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(blobUrl);
     document.body.removeChild(a);
   },
 
@@ -30,7 +43,7 @@ export const exportAPI = {
    * Export departments
    */
   exportDepartments: async (companyId?: string): Promise<void> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/export/departments`);
+    const url = resolveExportUrl('/export/departments');
     if (companyId) {
       url.searchParams.append('companyId', companyId);
     }
@@ -60,7 +73,7 @@ export const exportAPI = {
    * Export users
    */
   exportUsers: async (companyId?: string, departmentId?: string): Promise<void> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/export/users`);
+    const url = resolveExportUrl('/export/users');
     if (companyId) {
       url.searchParams.append('companyId', companyId);
     }
@@ -93,7 +106,7 @@ export const exportAPI = {
    * Export grievances
    */
   exportGrievances: async (companyId?: string, departmentId?: string, status?: string): Promise<void> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/export/grievances`);
+    const url = resolveExportUrl('/export/grievances');
     if (companyId) {
       url.searchParams.append('companyId', companyId);
     }
@@ -129,7 +142,7 @@ export const exportAPI = {
    * Export appointments
    */
   exportAppointments: async (companyId?: string, departmentId?: string, status?: string): Promise<void> => {
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/export/appointments`);
+    const url = resolveExportUrl('/export/appointments');
     if (companyId) {
       url.searchParams.append('companyId', companyId);
     }

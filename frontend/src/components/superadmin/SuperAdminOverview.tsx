@@ -32,6 +32,7 @@ import CompanyTabContent from "@/components/superadmin/CompanyTabContent";
 import UserTabContent from "@/components/superadmin/UserTabContent";
 import DepartmentTabContent from "@/components/superadmin/DepartmentTabContent";
 import CompanyMessageAnalytics from "@/components/superadmin/CompanyMessageAnalytics";
+import MetaCostCalculator from "@/components/superadmin/MetaCostCalculator";
 import { analyticsAPI, CompanyMessageStat, PlatformMessageTotals } from "@/lib/api/analytics";
 import {
   Shield,
@@ -46,6 +47,7 @@ import {
   Settings,
   FileText,
   Power,
+  Calculator,
 } from "lucide-react";
 
 // Helper function to get company display text
@@ -58,7 +60,7 @@ const getCompanyDisplay = (
   return companyId;
 };
 
-const VALID_SUPERADMIN_TABS = ["overview", "companies", "users", "departments", "roles", "features", "terminal"];
+const VALID_SUPERADMIN_TABS = ["overview", "companies", "users", "cost-calculator", "departments", "roles", "features", "terminal"];
 
 function SuperAdminOverviewContent() {
   const { user, loading, logout } = useAuth();
@@ -737,6 +739,7 @@ function SuperAdminOverviewContent() {
                     { val: "overview", label: "Overview", icon: BarChart2 },
                     { val: "companies", label: "Companies", icon: Building },
                     { val: "users", label: "Users", icon: Users },
+                    { val: "cost-calculator", label: "Cost Calculator", icon: Calculator },
                   ].map((t) => (
                     <TabsTrigger
                       key={t.val}
@@ -802,6 +805,7 @@ function SuperAdminOverviewContent() {
                 { val: "overview", label: "Overview", icon: BarChart2 },
                 { val: "companies", label: "Companies", icon: Building },
                 { val: "users", label: "Users", icon: Users },
+                { val: "cost-calculator", label: "Cost Calculator", icon: Calculator },
               ].map((t) => (
                 <button
                   key={t.val}
@@ -843,6 +847,13 @@ function SuperAdminOverviewContent() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <Button 
+                  onClick={() => setActiveTab("cost-calculator")}
+                  className="bg-sky-600 hover:bg-sky-700 text-white font-bold text-[12px] sm:text-[14px] uppercase tracking-wider h-8 sm:h-9 rounded-xl px-4 sm:px-5 border-0 shadow-lg shadow-sky-600/30 transition-all active:scale-95 flex-1 sm:flex-none"
+                >
+                  <Calculator className="w-3.5 h-3.5 mr-1.5 sm:mr-2 text-sky-200" />
+                  Cost Calculator
+                </Button>
                 {!showLogs && (
                   <Button 
                     onClick={() => setShowLogs(true)}
@@ -852,7 +863,6 @@ function SuperAdminOverviewContent() {
                     Audit Logs
                   </Button>
                 )}
-                
               </div>
             </div>
 
@@ -961,6 +971,12 @@ function SuperAdminOverviewContent() {
                 onRefresh={fetchUsers}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="cost-calculator" className="space-y-6 outline-none">
+            <MetaCostCalculator
+              onOpenCompanyDashboard={handleOpenCompanyDashboard}
+            />
           </TabsContent>
 
         </Tabs>
