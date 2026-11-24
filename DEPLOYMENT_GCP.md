@@ -72,27 +72,64 @@ gcloud artifacts repositories create pugarch-repo \
 
 ---
 
-### Step 2: Build and Push the Image via Google Cloud Build
+### Step 2: Grant Cloud Build Permissions (One-time)
 
-You do not need Docker installed locally! Google Cloud Build will build the multi-stage Dockerfile directly in the cloud:
+Cloud Build needs permission to deploy to Cloud Run and push to Artifact Registry:
 
 ```bash
-gcloud builds submit --tag asia-south1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/pugarch-repo/connect-portal:latest .
-```
+# Get your project number
+PROJECT_NUMBER=$(gcloud projects describe YOUR_GCP_PROJECT_ID --format='value(projectNumber)')
 
-> **Note**: If you want to specify a custom domain API URL during build:
-> ```bash
-> gcloud builds submit \
->   --substitutions=_API_URL="/api" \
->   --tag asia-south1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/pugarch-repo/connect-portal:latest .
-> ```
-> *(By default, `NEXT_PUBLIC_API_URL` defaults to `/api`, which works automatically on all domains).*
+# Grant Cloud Run Admin
+gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
+    --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+    --role="roles/run.admin"
+
+# Grant Service Account User (to act as the runtime service account)
+gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
+    --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+    --role="roles/iam.serviceAccountUser"
+
+# Grant Artifact Registry Writer
+gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
+    --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+    --role="roles/artifactregistry.writer"
+```
 
 ---
 
-### Step 3: Deploy to Google Cloud Run
+### Step 3: Automated Build & Deploy via `cloudbuild.yaml` (Recommended)
 
-Deploy the container image with recommended production resources:
+Run the entire pipeline with a single command! It leverages caching, builds the image, pushes immutable SHA tags, and deploys to Cloud Run:
+
+```bash
+gcloud builds submit --config=cloudbuild.yaml .
+```
+
+To override any default variables (e.g. region, service name, min-instances):
+```bash
+gcloud builds submit --config=cloudbuild.yaml \
+    --substitutions=_REGION="asia-south1",_SERVICE_NAME="connect-portal",_MIN_INSTANCES="1" .
+```
+
+---
+
+### Step 4: Configure Continuous Deployment (GitHub Trigger)
+
+To trigger builds and deployments automatically every time you push to the `main` branch:
+
+```bash
+gcloud builds triggers create github \
+    --name="deploy-connect-portal-main" \
+    --repo-owner="pugarchdev" \
+    --repo-name="connect.pugarch" \
+    --branch-pattern="^main$" \
+    --build-config="cloudbuild.yaml"
+```
+
+---
+
+### Step 5: Manual Deployment (Alternative via gcloud CLI)
 
 ```bash
 gcloud run deploy connect-portal \
