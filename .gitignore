@@ -51,6 +51,9 @@ dump.rdb
 # Uploads
 uploads/
 
+# Agent & workflows
+.agent/
+
 # Seed scripts (contain sensitive data)
 # backend/src/scripts/
 # **/scripts/seed*.ts
