@@ -39,11 +39,8 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# Build Next.js
+# Build Next.js with standalone output
 RUN npm run build
-
-# Remove devDependencies to reduce image size
-RUN npm prune --production
 
 # ------------------------------------------------------------------------------
 # Stage 3: Production Runner (Nginx + Backend + Frontend via Supervisord)
@@ -70,22 +67,21 @@ COPY --from=backend-builder /app/backend/package.json ./
 COPY --from=backend-builder /app/backend/node_modules ./node_modules
 COPY --from=backend-builder /app/backend/dist ./dist
 
-# 2. Setup Frontend
+# 2. Setup Frontend (Next.js Standalone)
 WORKDIR /app/frontend
-COPY --from=frontend-builder /app/frontend/package.json ./
-COPY --from=frontend-builder /app/frontend/node_modules ./node_modules
-COPY --from=frontend-builder /app/frontend/.next ./.next
+COPY --from=frontend-builder /app/frontend/.next/standalone ./
+COPY --from=frontend-builder /app/frontend/.next/static ./.next/static
 COPY --from=frontend-builder /app/frontend/public ./public
-COPY --from=frontend-builder /app/frontend/next.config.js ./
 
 # 3. Setup Orchestration Configurations
 WORKDIR /app
 COPY docker/nginx.conf.template /etc/nginx/nginx.conf.template
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh /app/entrypoint.sh
+COPY docker/wait-and-start-nginx.sh /app/wait-and-start-nginx.sh
 
-# Ensure script is executable and strip Windows CRLF line endings if present
-RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Ensure scripts are executable and strip Windows CRLF line endings if present
+RUN sed -i 's/\r$//' /app/*.sh && chmod +x /app/*.sh
 
 # Cloud Run dynamic PORT variable (defaults to 8080)
 EXPOSE 8080

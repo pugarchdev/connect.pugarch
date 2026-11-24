@@ -91,10 +91,10 @@ images:
 
 # Customizable substitution variables with production-ready defaults
 substitutions:
-  _REGION: 'asia-south1'
+  _REGION: 'asia-southeast1'
   _REPOSITORY: 'pugarch-repo'
-  _SERVICE_NAME: 'connect-portal'
-  _IMAGE_NAME: 'connect-portal'
+  _SERVICE_NAME: 'connect-pugarch'
+  _IMAGE_NAME: 'connect-pugarch'
   _API_URL: '/api'
   _MIN_INSTANCES: '1'
   _MAX_INSTANCES: '10'

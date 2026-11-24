@@ -357,17 +357,25 @@ const runInitialization = (): Promise<void> => {
   return startupInitializationPromise;
 };
 
-// For local development
+// For local development & container deployments (Cloud Run / Docker)
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  const startServer = async () => {
-    await runInitialization();
-    
-    // Create server instance
+  const startServer = () => {
+    // 1. Immediately bind and start HTTP listener so health checks and Nginx reverse proxy
+    // do not receive 111 Connection Refused (502 Bad Gateway) during boot.
     const server = app.listen(PORT, () => {
-      logger.info(`🚀 Server running on port ${PORT}`);
-      startWhatsAppTemplateSyncCron();
-      startSlaEscalationCron();
+      logger.info(`🚀 Server listening on port ${PORT}`);
     });
+
+    // 2. Perform async initialization (GCS check, DB connection, counters, crons)
+    runInitialization()
+      .then(() => {
+        logger.info('✅ Server initialization complete');
+        startWhatsAppTemplateSyncCron();
+        startSlaEscalationCron();
+      })
+      .catch((err) => {
+        logger.error('❌ Server background initialization failed:', err);
+      });
 
     // Production-grade error handling for port conflicts
     server.on('error', (error: any) => {
@@ -403,13 +411,9 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
     return server;
   };
   
-  startServer().catch(err => {
-    logger.error('❌ Server startup failed:', err);
-    process.exit(1);
-  });
+  startServer();
 } else {
-  // In Vercel environment, init needs to be handled
-  // We'll call it once at the top level if supported, or rely on lazy-loading
+  // In Vercel serverless environment
   runInitialization().catch(err => logger.error('Vercel initialization failed:', err));
 }
 

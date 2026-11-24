@@ -65,10 +65,10 @@ The single repository contains both the frontend and backend. The primary **[Doc
 ```bash
 gcloud artifacts repositories create pugarch-repo \
     --repository-format=docker \
-    --location=asia-south1 \
+    --location=asia-southeast1 \
     --description="Docker repository for PugArch Connect"
 ```
-*(Replace `asia-south1` with your preferred GCP region, e.g., `asia-south1` Mumbai, `asia-south2` Delhi, or `us-central1`).*
+*(Using `asia-southeast1` Singapore or `asia-south1` Mumbai based on your project region).*
 
 ---
 
@@ -78,20 +78,20 @@ Cloud Build needs permission to deploy to Cloud Run and push to Artifact Registr
 
 ```bash
 # Get your project number
-PROJECT_NUMBER=$(gcloud projects describe YOUR_GCP_PROJECT_ID --format='value(projectNumber)')
+PROJECT_NUMBER=$(gcloud projects describe whatsapp-chatbot-490106 --format='value(projectNumber)')
 
 # Grant Cloud Run Admin
-gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
+gcloud projects add-iam-policy-binding whatsapp-chatbot-490106 \
     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
     --role="roles/run.admin"
 
 # Grant Service Account User (to act as the runtime service account)
-gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
+gcloud projects add-iam-policy-binding whatsapp-chatbot-490106 \
     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
     --role="roles/iam.serviceAccountUser"
 
 # Grant Artifact Registry Writer
-gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
+gcloud projects add-iam-policy-binding whatsapp-chatbot-490106 \
     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
     --role="roles/artifactregistry.writer"
 ```
@@ -100,16 +100,16 @@ gcloud projects add-iam-policy-binding YOUR_GCP_PROJECT_ID \
 
 ### Step 3: Automated Build & Deploy via `cloudbuild.yaml` (Recommended)
 
-Run the entire pipeline with a single command! It leverages caching, builds the image, pushes immutable SHA tags, and deploys to Cloud Run:
+Run the entire pipeline with a single command! It builds Next.js standalone and Express, pushes immutable SHA tags, and deploys to Cloud Run:
 
 ```bash
 gcloud builds submit --config=cloudbuild.yaml .
 ```
 
-To override any default variables (e.g. region, service name, min-instances):
+To override any substitution variables (e.g. region, service name, min-instances):
 ```bash
 gcloud builds submit --config=cloudbuild.yaml \
-    --substitutions=_REGION="asia-south1",_SERVICE_NAME="connect-portal",_MIN_INSTANCES="1" .
+    --substitutions=_REGION="asia-southeast1",_SERVICE_NAME="connect-pugarch",_MIN_INSTANCES="1" .
 ```
 
 ---
@@ -120,7 +120,7 @@ To trigger builds and deployments automatically every time you push to the `main
 
 ```bash
 gcloud builds triggers create github \
-    --name="deploy-connect-portal-main" \
+    --name="deploy-connect-pugarch-main" \
     --repo-owner="pugarchdev" \
     --repo-name="connect.pugarch" \
     --branch-pattern="^main$" \
@@ -132,10 +132,10 @@ gcloud builds triggers create github \
 ### Step 5: Manual Deployment (Alternative via gcloud CLI)
 
 ```bash
-gcloud run deploy connect-portal \
-    --image asia-south1-docker.pkg.dev/YOUR_GCP_PROJECT_ID/pugarch-repo/connect-portal:latest \
+gcloud run deploy connect-pugarch \
+    --image asia-southeast1-docker.pkg.dev/whatsapp-chatbot-490106/pugarch-repo/connect-pugarch:latest \
     --platform managed \
-    --region asia-south1 \
+    --region asia-southeast1 \
     --allow-unauthenticated \
     --port 8080 \
     --memory 2Gi \
@@ -143,13 +143,17 @@ gcloud run deploy connect-portal \
     --min-instances 1 \
     --max-instances 10 \
     --timeout 300s \
+    --service-account="whatsappchatbotserviceadmin@whatsapp-chatbot-490106.iam.gserviceaccount.com" \
     --set-env-vars NODE_ENV=production,FRONTEND_URL=https://connect.pugarch.in \
     --set-env-vars MONGODB_URI="your_mongodb_connection_string" \
     --set-env-vars JWT_SECRET="your_jwt_secret_min_32_chars" \
     --set-env-vars JWT_EXPIRES_IN="7d",JWT_REFRESH_SECRET="your_refresh_secret" \
-    --set-env-vars GCS_BUCKET_NAME="chatbot-media-storage-490106",GCP_PROJECT_ID="YOUR_GCP_PROJECT_ID"
+    --set-env-vars GCS_BUCKET_NAME="chatbot-media-storage-490106",GCP_PROJECT_ID="whatsapp-chatbot-490106"
 ```
 
+> 💡 **Service Account & ADC (Recommended)**:
+> By attaching `--service-account="whatsappchatbotserviceadmin@whatsapp-chatbot-490106.iam.gserviceaccount.com"`, Cloud Run automatically authenticates to Google Cloud Storage using **Application Default Credentials (ADC)** without needing any service account JSON string or secret!
+>
 > 💡 **Best Practice for Secrets**: Use [GCP Secret Manager](https://cloud.google.com/secret-manager) instead of plain environment variables for `MONGODB_URI` and `JWT_SECRET`:
 > ```bash
 > --set-secrets="MONGODB_URI=mongodb-uri:latest,JWT_SECRET=jwt-secret:latest"
@@ -171,7 +175,31 @@ gcloud run deploy connect-portal \
 | `REDIS_PASSWORD` | Redis auth password | `password` | Optional |
 | `GCP_PROJECT_ID` | GCP Project ID for GCS Media Storage | `whatsapp-chatbot-490106` | Yes (for media) |
 | `GCS_BUCKET_NAME` | GCS Bucket for media files | `chatbot-media-storage-490106` | Yes (for media) |
-| `GCP_SERVICE_ACCOUNT_JSON` | Service account JSON string (if not using ADC) | `{"type":"service_account",...}` | Optional on GCP |
+| `GCP_SERVICE_ACCOUNT_JSON` | Service account JSON string (optional, can be raw JSON or Base64) | `{"type":"service_account",...}` or base64 string | Optional (ADC is automatic on GCP) |
+
+---
+
+## 🛠️ GCP Troubleshooting & Resolved Issues
+
+### 1. 502 Bad Gateway / Connection Refused on `127.0.0.1:3000`
+- **Cause**: Next.js was previously invoked with `node_modules/.bin/next start`, which failed inside Supervisord, or Nginx started before Next.js and Express had finished binding ports.
+- **Resolution**:
+  1. Next.js is now compiled with `output: 'standalone'` and starts via pure Node: `node server.js` on `0.0.0.0:3000`.
+  2. Nginx start is synchronized via `wait-and-start-nginx.sh`, which verifies both Express (`5001/health`) and Next.js (`3000`) before opening port `8080`.
+  3. Express binds port `5001` immediately upon boot while asynchronous database and GCS initializations proceed in the background.
+
+### 2. `❌ Failed to parse GCP_SERVICE_ACCOUNT_JSON`
+- **Cause**: Passing JSON in CLI flags or environment variables often breaks due to comma-delimited argument parsers, unescaped `\n` in private keys, or surrounding quotes.
+- **Resolution**:
+  1. `parseServiceAccountJson` automatically handles raw JSON, single/double quotes, unescaped newlines, and base64-encoded strings (`Buffer.from(raw, 'base64')`).
+  2. If the JSON string is omitted or invalid, it gracefully falls back to **GCP Application Default Credentials (ADC)** or local key file without crashing.
+  3. On Google Cloud Run, simply assign the IAM service account to the service (`--service-account`), and credentials will be resolved automatically.
+
+### 3. GCS Bucket Metadata Update Conflict (`code 9: The metadata was edited during the operation`)
+- **Cause**: Multiple Cloud Run instances or concurrent requests ran `bucket.setCorsConfiguration()` and `bucket.makePublic()` concurrently during startup.
+- **Resolution**:
+  1. Bucket CORS and public access operations are wrapped in isolated non-fatal handlers that catch code 9 metadata conflicts.
+  2. In `uploadBufferToGCS`, uploads automatically fall back gracefully if Uniform Bucket-Level Access (UBLA) is active instead of object-level ACLs.
 
 ---
 

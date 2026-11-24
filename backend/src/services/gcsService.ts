@@ -51,13 +51,27 @@ export async function uploadBufferToGCS(
       
       const finalContentType = getProperContentType(fileName, contentType);
 
-      await file.save(buffer, {
-        contentType: finalContentType,
-        public: true,
-        metadata: {
-          cacheControl: 'public, max-age=31536000',
-        },
-      });
+      try {
+        await file.save(buffer, {
+          contentType: finalContentType,
+          public: true,
+          metadata: {
+            cacheControl: 'public, max-age=31536000',
+          },
+        });
+      } catch (saveError: any) {
+        if (saveError.message && (saveError.message.includes('uniform') || saveError.message.includes('ACL'))) {
+          // Retry without ACL public: true since bucket has Uniform Bucket-Level Access
+          await file.save(buffer, {
+            contentType: finalContentType,
+            metadata: {
+              cacheControl: 'public, max-age=31536000',
+            },
+          });
+        } else {
+          throw saveError;
+        }
+      }
 
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${destination.split('/').map(segment => encodeURIComponent(segment)).join('/')}`;
       logger.info(`✅ GCS upload success: ${publicUrl}`);

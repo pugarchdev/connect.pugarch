@@ -11,6 +11,12 @@ echo " Backend internal port: 5001"
 echo " Frontend internal port: 3000"
 echo "=========================================================="
 
+# Ensure standalone server.js is at /app/frontend/server.js if nested by Next.js
+if [ ! -f /app/frontend/server.js ] && [ -f /app/frontend/frontend/server.js ]; then
+    echo "Relocating nested standalone files from /app/frontend/frontend to /app/frontend"
+    cp -rn /app/frontend/frontend/* /app/frontend/ 2>/dev/null || true
+fi
+
 # Substitute PORT into nginx template
 envsubst '${PORT}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
 
