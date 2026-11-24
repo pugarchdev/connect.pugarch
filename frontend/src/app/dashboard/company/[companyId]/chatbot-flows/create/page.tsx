@@ -30,6 +30,7 @@ export default function CreateFlowPage() {
 
   const [flowName, setFlowName] = useState("Untitled Flow");
   const [flowDescription, setFlowDescription] = useState("");
+  const [flowIsActive, setFlowIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEditing);
   const [initialNodes, setInitialNodes] = useState<FlowNode[]>([]);
@@ -59,6 +60,9 @@ export default function CreateFlowPage() {
       if (flowData) {
         setFlowName(flowData.flowName ?? flowData.name ?? "");
         setFlowDescription(flowData.flowDescription ?? flowData.description ?? "");
+        if (flowData.isActive !== undefined) {
+          setFlowIsActive(flowData.isActive);
+        }
 
         const transformed = transformFromBackendFormat(flowData);
         setInitialNodes(transformed.nodes);
@@ -106,7 +110,7 @@ export default function CreateFlowPage() {
             description: flowDescription,
             companyId,
             version: 1,
-            isActive: false,
+            isActive: isEditing ? (flowIsActive ?? true) : true,
             createdBy: user?.id || "",
             updatedBy: user?.id || "",
           },

@@ -6,6 +6,7 @@ import { authenticate } from '../middleware/auth';
 import { requireSuperAdmin } from '../middleware/rbac';
 import { logger } from '../config/logger';
 import { generateDefaultFlows, hasDefaultFlows } from '../services/defaultFlowGenerator';
+import { FlowCacheService } from '../services/flowCacheService';
 import {
   WHATSAPP_LIMITS_BUTTONS,
   WHATSAPP_LIMITS_LIST
@@ -525,6 +526,7 @@ router.post('/', authenticate, requireSuperAdmin, async (req: Request, res: Resp
     }, null, 2));
 
     const flow = await ChatbotFlow.create(flowData);
+    await FlowCacheService.invalidateCompanyCache(flow.companyId.toString());
     
     logger.info(`✅ Flow created successfully: ${flow.flowId}`);
 
@@ -854,6 +856,7 @@ router.put('/:id', authenticate, requireSuperAdmin, async (req: Request, res: Re
     flow.updatedBy = user._id;
     
     await flow.save();
+    await FlowCacheService.invalidateCompanyCache(flow.companyId.toString());
 
     logger.info(`✅ Flow updated successfully: ${flow.flowId}`);
 
@@ -1099,6 +1102,7 @@ router.post('/:id/activate', authenticate, requireSuperAdmin, async (req: Reques
     // Activate this flow
     flow.isActive = true;
     await flow.save();
+    await FlowCacheService.invalidateCompanyCache(flow.companyId.toString());
 
     res.json({
       success: true,
@@ -1154,6 +1158,7 @@ router.post('/:id/set-active-flow', authenticate, requireSuperAdmin, async (req:
         priority: 0
       }] as any;
       await waConfig.save();
+      await FlowCacheService.invalidateCompanyCache(flow.companyId.toString());
       logger.info(`✅ WhatsApp config activeFlows updated for company ${flow.companyId}`);
     } else {
       logger.warn(`⚠️ No WhatsApp config found for company ${flow.companyId} — skipping activeFlows update`);

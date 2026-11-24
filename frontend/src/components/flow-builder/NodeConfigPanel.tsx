@@ -72,8 +72,8 @@ export default function NodeConfigPanel({
             value={(localData as any)[field] || ''}
             onChange={(e) => handleChange(field, e.target.value)}
             placeholder={placeholder}
-            rows={4}
-            className="text-sm font-mono"
+            rows={9}
+            className="text-sm font-mono min-h-[180px]"
           />
         </TabsContent>
         {LANGUAGES.filter(l => l.code !== 'en').map(lang => (
@@ -82,8 +82,8 @@ export default function NodeConfigPanel({
               value={(localData as any)[`${field}Translations`]?.[lang.code] || ''}
               onChange={(e) => handleTranslationChange(field, lang.code, e.target.value)}
               placeholder={`Translation for ${lang.name}...`}
-              rows={4}
-              className="text-sm font-mono border-blue-200 focus:border-blue-400"
+              rows={9}
+              className="text-sm font-mono border-blue-200 focus:border-blue-400 min-h-[180px]"
             />
           </TabsContent>
         ))}

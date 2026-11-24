@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import CompanyWhatsAppConfig from '../models/CompanyWhatsAppConfig';
 import CompanyWhatsAppTemplate from '../models/CompanyWhatsAppTemplate';
+import { FlowCacheService } from '../services/flowCacheService';
 import { authenticate } from '../middleware/auth';
 import { requireSuperAdmin } from '../middleware/rbac';
 import {
@@ -392,6 +393,7 @@ router.put('/:id', authenticate, requireSuperAdmin, async (req: Request, res: Re
     config.updatedBy = user._id;
     
     await config.save();
+    await FlowCacheService.invalidateCompanyCache(config.companyId.toString());
 
     res.json({
       success: true,
@@ -528,6 +530,7 @@ router.post('/:id/assign-flow', authenticate, requireSuperAdmin, async (req: Req
     }
 
     console.log(`✅ Flow assigned successfully: ${flowId} to config ${id}`);
+    await FlowCacheService.invalidateCompanyCache(config.companyId.toString());
 
     res.json({
       success: true,
@@ -581,6 +584,7 @@ router.delete('/:id/flow/:flowId', authenticate, requireSuperAdmin, async (req: 
     );
 
     await config.save();
+    await FlowCacheService.invalidateCompanyCache(config.companyId.toString());
 
     res.json({
       success: true,
