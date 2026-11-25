@@ -4,9 +4,8 @@ const ABUSIVE_TERMS = [/\b(abuse|hate|kill|terror|bomb)\b/i];
 export const sanitizeText = (text: string = '', max = 100): string =>
   String(text || '')
     .replace(URL_REGEX, '')
-    // Allow alphanumeric characters from all languages including marks/diacritics (\p{M}), plus common punctuation
-    .replace(/[^\p{L}\p{M}\p{N} .,?!:\-()]/gu, '')
-    .replace(/\s+/g, ' ')
+    // Allow alphanumeric characters from all languages, plus common punctuation (including colons for time)
+    .replace(/[^\p{L}\p{N} .,?!:\-()]/gu, '')
     .substring(0, max)
     .trim();
 
@@ -47,8 +46,7 @@ export function sanitizeRemarks(text: string = ''): string {
 export function sanitizeDateTimeText(text: string = '', max = 80): string {
   return String(text || '')
     .replace(URL_REGEX, '')
-    .replace(/[^\p{L}\p{M}\p{N} :\-]/gu, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[^\p{L}\p{N} :\-]/gu, '')
     .substring(0, max)
     .trim();
 }
@@ -56,7 +54,7 @@ export function sanitizeDateTimeText(text: string = '', max = 80): string {
 export function sanitizeNote(text: string = ''): string {
   return String(text || '')
     .replace(URL_REGEX, '')
-    .replace(/[^\p{L}\p{M}\p{N} .,?!:\-()\n]/gu, '')
+    .replace(/[^\p{L}\p{N} .,?!:\-()\n]/gu, '')
     .replace(/\r\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .substring(0, 400)

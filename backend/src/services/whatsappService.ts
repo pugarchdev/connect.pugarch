@@ -208,11 +208,7 @@ async function logOutgoingMessage(
 
 function safeText(text: string, limit = 4000): string {
   if (!text) return '';
-  const collapsed = String(text)
-    .replace(/[\t\r\n]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return collapsed.length > limit ? collapsed.substring(0, limit - 10) + '…' : collapsed;
+  return text.length > limit ? text.substring(0, limit - 10) + '…' : text;
 }
 
 function sanitizeButtonReplyId(rawId: string, fallbackIndex: number): string {
@@ -222,18 +218,6 @@ function sanitizeButtonReplyId(rawId: string, fallbackIndex: number): string {
     .replace(/[^A-Za-z0-9_.:-]/g, '');
   const candidate = normalized || `btn_${fallbackIndex + 1}`;
   return candidate.slice(0, 256);
-}
-
-function sanitizeButtonTitle(title: string, limit = WHATSAPP_LIMITS_BUTTONS.BUTTON_TITLE_MAX_LENGTH): string {
-  if (!title) return '';
-  const withoutEmojis = String(title)
-    .replace(/\p{Extended_Pictographic}/gu, '')
-    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '')
-    .replace(/[\uFE00-\uFE0F]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const cleaned = withoutEmojis || String(title).replace(/\s+/g, ' ').trim();
-  return safeText(cleaned, limit);
 }
 
 function buildComplianceFooter(): string {
@@ -937,7 +921,7 @@ export async function sendWhatsAppButtons(
         type: 'reply',
         reply: {
           id: sanitizeButtonReplyId(btn?.id || btn?.title || '', index),
-          title: sanitizeButtonTitle(btn?.title || '')
+          title: safeText((btn?.title || '').trim(), WHATSAPP_LIMITS_BUTTONS.BUTTON_TITLE_MAX_LENGTH)
         }
       }))
       .filter((btn) => Boolean(btn.reply.title));
