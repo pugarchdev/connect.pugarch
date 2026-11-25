@@ -166,7 +166,7 @@ export const DashboardHeader = memo(function DashboardHeader({
                   sessionStorage.removeItem("drilldownCompanyId");
                   if (onBackToDashboard) onBackToDashboard();
                 }}
-                className="h-7 px-2 sm:h-9 sm:px-4 text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500 hover:text-white rounded-lg sm:rounded-xl transition-all duration-300 border border-indigo-500/30 text-[10px] sm:text-[14px] font-black uppercase tracking-widest flex items-center shrink-0 shadow-lg"
+                className="h-7 px-2 sm:h-9 sm:px-4 text-white bg-white/10 backdrop-blur-sm hover:bg-white/20 rounded-lg sm:rounded-xl transition-all duration-300 border border-white/20 text-[10px] sm:text-[14px] font-black uppercase tracking-widest flex items-center shrink-0 shadow-lg active:scale-95"
               >
                 <ArrowLeft className="w-3 h-3 sm:mr-1.5" />
                 <span className="ml-1 sm:ml-0">Back</span>
