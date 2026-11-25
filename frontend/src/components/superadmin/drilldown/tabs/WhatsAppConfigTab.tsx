@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,6 +17,10 @@ import {
   Settings,
   MessageSquare,
   AlertCircle,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useWhatsappConfig } from "@/lib/query/useWhatsappConfig";
 import { useCachedQuery } from "@/lib/query/cache";
@@ -58,6 +62,27 @@ const WhatsAppConfigTab: React.FC<WhatsAppConfigTabProps> = ({ companyId }) => {
   });
   const [creatingNew, setCreatingNew] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
+  const [showToken, setShowToken] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = useCallback(async (value: string, fieldKey: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch {
+      // fallback for older browsers
+      const el = document.createElement("textarea");
+      el.value = value;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2000);
+    }
+  }, []);
 
   useEffect(() => {
     if (!config) return;
@@ -301,116 +326,203 @@ const WhatsAppConfigTab: React.FC<WhatsAppConfigTabProps> = ({ companyId }) => {
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* Phone Number */}
             <div className="space-y-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
-              <input 
-                type="text"
-                value={isActuallyEditing ? configForm.phoneNumber : config?.phoneNumber}
-                onChange={(e) => setConfigForm({...configForm, phoneNumber: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="e.g. 9821550841"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={isActuallyEditing ? configForm.phoneNumber : (config?.phoneNumber ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, phoneNumber: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-10 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="e.g. 9821550841"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.phoneNumber : (config?.phoneNumber ?? ""), "phoneNumber")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Phone Number"
+                >
+                  {copiedField === "phoneNumber" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
+            {/* Display Phone Number */}
             <div className="space-y-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Display Phone Number</label>
-              <input 
-                type="text"
-                value={isActuallyEditing ? configForm.displayPhoneNumber : config?.displayPhoneNumber}
-                onChange={(e) => setConfigForm({...configForm, displayPhoneNumber: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="e.g. +91 98215 50841"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={isActuallyEditing ? configForm.displayPhoneNumber : (config?.displayPhoneNumber ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, displayPhoneNumber: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-10 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="e.g. +91 98215 50841"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.displayPhoneNumber : (config?.displayPhoneNumber ?? ""), "displayPhoneNumber")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Display Phone Number"
+                >
+                  {copiedField === "displayPhoneNumber" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
+            {/* Phone Number ID */}
             <div className="space-y-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number ID</label>
-              <input 
-                type="text"
-                value={isActuallyEditing ? configForm.phoneNumberId : config?.phoneNumberId}
-                onChange={(e) => setConfigForm({...configForm, phoneNumberId: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="Enter Meta Phone Number ID"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={isActuallyEditing ? configForm.phoneNumberId : (config?.phoneNumberId ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, phoneNumberId: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-10 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="Enter Meta Phone Number ID"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.phoneNumberId : (config?.phoneNumberId ?? ""), "phoneNumberId")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Phone Number ID"
+                >
+                  {copiedField === "phoneNumberId" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
+            {/* Business Account ID */}
             <div className="space-y-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Business Account ID</label>
-              <input 
-                type="text"
-                value={isActuallyEditing ? configForm.businessAccountId : config?.businessAccountId}
-                onChange={(e) => setConfigForm({...configForm, businessAccountId: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="Enter WABA ID"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={isActuallyEditing ? configForm.businessAccountId : (config?.businessAccountId ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, businessAccountId: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-10 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="Enter WABA ID"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.businessAccountId : (config?.businessAccountId ?? ""), "businessAccountId")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Business Account ID"
+                >
+                  {copiedField === "businessAccountId" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
+            {/* Permanent Access Token — full width, eye + copy */}
             <div className="space-y-2 sm:col-span-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Permanent Access Token</label>
-              <input 
-                type="password"
-                value={isActuallyEditing ? configForm.accessToken : config?.accessToken}
-                onChange={(e) => setConfigForm({...configForm, accessToken: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="Enter Meta System User Token"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type={showToken ? "text" : "password"}
+                  value={isActuallyEditing ? configForm.accessToken : (config?.accessToken ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, accessToken: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-20 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="Enter Meta System User Token"
+                />
+                {/* Eye toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowToken((v) => !v)}
+                  className="absolute right-10 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title={showToken ? "Hide token" : "Show token"}
+                >
+                  {showToken ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+                {/* Copy button */}
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.accessToken : (config?.accessToken ?? ""), "accessToken")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Access Token"
+                >
+                  {copiedField === "accessToken" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
+            {/* Webhook Verify Token */}
             <div className="space-y-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Webhook Verify Token</label>
-              <input 
-                type="text"
-                value={isActuallyEditing ? configForm.verifyToken : config?.verifyToken}
-                onChange={(e) => setConfigForm({...configForm, verifyToken: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="Your custom verify string"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={isActuallyEditing ? configForm.verifyToken : (config?.verifyToken ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, verifyToken: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-10 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="Your custom verify string"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.verifyToken : (config?.verifyToken ?? ""), "verifyToken")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Webhook Verify Token"
+                >
+                  {copiedField === "verifyToken" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
+            {/* Webhook Secret */}
             <div className="space-y-2">
               <label className="text-[15px] font-black text-slate-400 uppercase tracking-widest ml-1">Webhook Secret</label>
-              <input 
-                type="text"
-                value={isActuallyEditing ? configForm.webhookSecret : config?.webhookSecret}
-                onChange={(e) => setConfigForm({...configForm, webhookSecret: e.target.value})}
-                readOnly={!isActuallyEditing}
-                className={`w-full p-3 border rounded-xl text-xs ${
-                  isActuallyEditing
-                    ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
-                    : "bg-slate-50 border-slate-200 text-slate-600"
-                }`}
-                placeholder="Your webhook secret"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={isActuallyEditing ? configForm.webhookSecret : (config?.webhookSecret ?? "")}
+                  onChange={(e) => setConfigForm({...configForm, webhookSecret: e.target.value})}
+                  readOnly={!isActuallyEditing}
+                  className={`w-full p-3 pr-10 border rounded-xl text-xs ${
+                    isActuallyEditing
+                      ? "bg-white border-indigo-200 text-slate-700 focus:ring-2 focus:ring-indigo-100"
+                      : "bg-slate-50 border-slate-200 text-slate-600"
+                  }`}
+                  placeholder="Your webhook secret"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(isActuallyEditing ? configForm.webhookSecret : (config?.webhookSecret ?? ""), "webhookSecret")}
+                  className="absolute right-2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                  title="Copy Webhook Secret"
+                >
+                  {copiedField === "webhookSecret" ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
           </div>
         </CardContent>
