@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PugArch Connect Portal — Technical Documentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1a1a2e;
+    background: #fff;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 40px;
+  }
+
+  /* Cover page */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 80px 60px;
+    background: linear-gradient(135deg, #0f4c81 0%, #1a73e8 50%, #0f4c81 100%);
+    color: white;
+    page-break-after: always;
+    margin: -40px -40px 40px -40px;
+  }
+  .cover-badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .cover h1 {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    border: none;
+    color: white;
+    padding: 0;
+  }
+  .cover h1 span { color: #7ec8e3; }
+  .cover-subtitle {
+    font-size: 20px;
+    font-weight: 300;
+    opacity: 0.85;
+    margin-bottom: 48px;
+  }
+  .cover-meta { 
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 500px;
+  }
+  .cover-meta-item label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .cover-meta-item span {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f4c81;
+    margin: 48px 0 16px 0;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #0f4c81;
+    page-break-after: avoid;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a73e8;
+    margin: 36px 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #d0e4f7;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 24px 0 8px 0;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    margin: 16px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  p { margin: 8px 0; }
+  
+  br { display: block; margin: 4px 0; }
+
+  strong { font-weight: 600; color: #1a1a2e; }
+  em { font-style: italic; color: #4a5568; }
+  
+  code {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 11px;
+    background: #f0f4f8;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #c7254e;
+    border: 1px solid #e2e8f0;
+  }
+  
+  pre {
+    background: #1a1a2e;
+    color: #a8d8ea;
+    padding: 20px 24px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+    page-break-inside: avoid;
+  }
+  pre code {
+    background: none;
+    border: none;
+    color: #a8d8ea;
+    font-size: 11px;
+    padding: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 12px;
+    page-break-inside: avoid;
+  }
+  th {
+    background: #0f4c81;
+    color: white;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e8f0fe;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f8fbff; }
+  tr:hover td { background: #e8f4fd; }
+
+  ul, ol { 
+    padding-left: 20px; 
+    margin: 8px 0 8px 16px; 
+  }
+  li { margin: 3px 0; }
+
+  blockquote {
+    border-left: 4px solid #1a73e8;
+    background: #f0f7ff;
+    padding: 12px 16px;
+    margin: 12px 0;
+    color: #2d3748;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid #e2e8f0;
+    margin: 32px 0;
+  }
+
+  .toc {
+    background: #f8fbff;
+    border: 1px solid #d0e4f7;
+    border-radius: 8px;
+    padding: 24px 32px;
+    margin: 24px 0;
+    page-break-inside: avoid;
+  }
+  .toc h2 { border: none; color: #0f4c81; margin-top: 0; }
+  .toc ol { counter-reset: item; }
+  .toc > ol > li { font-weight: 600; }
+  .toc > ol > li > ol > li { font-weight: 400; }
+
+  .page-break { page-break-before: always; }
+
+  @media print {
+    body { max-width: none; padding: 20px; font-size: 12px; }
+    .cover { min-height: auto; padding: 60px 40px; }
+    .cover h1 { font-size: 36px; }
+    pre { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+    h1, h2, h3 { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-badge">Technical Documentation</div>
+  <h1>PugArch <span>Connect</span><br>Portal</h1>
+  <div class="cover-subtitle">Complete Technical &amp; Functional Reference</div>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>Version</label>
+      <span>v5.0</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Date</label>
+      <span>November 2026</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Platform</label>
+      <span>connect.pugarch.in</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Classification</label>
+      <span>Internal Reference</span>
+    </div>
+  </div>
+</div>
+
+<h1>PugArch Connect Portal — Technical &amp; Functional Documentation</h1>
+<br>
+<p><strong>Version:</strong> 5.0  </p>
+<p><strong>Platform:</strong> connect.pugarch.in  </p>
+<p><strong>Classification:</strong> Internal Technical Reference  </p>
+<p><strong>Date:</strong> November 2026</p>
+<br>
+<hr>
+<br>
+<h2>Table of Contents</h2>
+<br>
+<li><a>Executive Summary</a></li>
+<li><a>System Architecture</a></li>
+<li><a>Technology Stack</a></li>
+<li><a>Application Modules &amp; Features</a></li>
+<li style="margin-left:30px">4.1 Grievance Management Module</li>
+<li style="margin-left:30px">4.2 Appointment Management Module</li>
+<li style="margin-left:30px">4.3 WhatsApp Chatbot &amp; Flow Engine</li>
+<li style="margin-left:30px">4.4 Lead Capture Module</li>
+<li style="margin-left:30px">4.5 Analytics &amp; Reporting Module</li>
+<li style="margin-left:30px">4.6 Notifications Module</li>
+<li><a>User Roles &amp; Access Control (RBAC)</a></li>
+<li><a>Business Logic &amp; Workflows</a></li>
+<li style="margin-left:30px">6.1 Grievance Lifecycle</li>
+<li style="margin-left:30px">6.2 SLA Escalation Engine</li>
+<li style="margin-left:30px">6.3 Appointment Lifecycle</li>
+<li style="margin-left:30px">6.4 WhatsApp Flow Engine</li>
+<li><a>Data Models</a></li>
+<li><a>API Reference Summary</a></li>
+<li><a>Multi-Tenancy Architecture</a></li>
+<li><a>Security &amp; Compliance</a></li>
+<li><a>Integrations</a></li>
+<li><a>Deployment &amp; Infrastructure</a></li>
+<li><a>Configuration Reference</a></li>
+<li><a>Glossary</a></li>
+<br>
+<hr>
+<br>
+<h2>1. Executive Summary</h2>
+<br>
+<p><strong>PugArch Connect</strong> is a multi-tenant, WhatsApp-first citizen engagement and grievance redressal platform built for government (and enterprise) organisations. It enables citizens to register complaints, book appointments, and track their requests entirely through WhatsApp — without installing any application. Administrative staff access a web-based dashboard to manage, assign, escalate, and resolve these requests.</p>
+<br>
+<h3>Core Value Propositions</h3>
+<br>
+<table><thead>
+<tr><th>Capability</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><strong>WhatsApp-native citizen interface</strong></td><td>Citizens interact via familiar WhatsApp messaging; no app download required</td></tr>
+<tr><td><strong>Automated chatbot flows</strong></td><td>Configurable multi-step conversation flows collect citizen data, route to departments, and auto-create records</td></tr>
+<tr><td><strong>SLA-driven escalation</strong></td><td>Automated 3-level escalation (Officer → Department Head → District Collector) when SLA is breached</td></tr>
+<tr><td><strong>Multi-tenant</strong></td><td>A single platform instance serves multiple independent organisations (companies), each fully isolated</td></tr>
+<tr><td><strong>Multi-language</strong></td><td>Supports English, Hindi (hi), Odia (or), and Marathi (mr) in chatbot and notifications</td></tr>
+<tr><td><strong>Real-time notifications</strong></td><td>Dual-channel notifications (WhatsApp + Email) to officers and citizens at every workflow step</td></tr>
+<tr><td><strong>Audit trail</strong></td><td>Immutable audit logs for every action, with timestamps and actor identity</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h2>2. System Architecture</h2>
+<br>
+<h3>2.1 High-Level Architecture</h3>
+<br>
+<pre><code class="language-">
+                    Citizens (WhatsApp)
+                           │
+                           ▼
+              Meta WhatsApp Business API
+                           │
+                     Webhook POST
+                           │
+                           ▼
+         ┌────────────────────────────────────────┐
+         │          GCP Cloud Run Container        │
+         │                                        │
+         │  ┌──────────┐    ┌────────────────┐    │
+         │  │  Nginx   │───▶│ Express API    │    │
+         │  │ (Port    │    │ (Port 5001)    │    │
+         │  │  8080)   │    │ TypeScript     │    │
+         │  └──────────┘    └───────┬────────┘    │
+         │       │                  │             │
+         │       │          ┌───────▼────────┐    │
+         │       │          │ Dynamic Flow   │    │
+         │       │          │ Engine         │    │
+         │       │          │ (WhatsApp Bot) │    │
+         │       │          └───────┬────────┘    │
+         │       │                  │             │
+         │  ┌────▼──────┐           │             │
+         │  │ Next.js   │           │             │
+         │  │ Dashboard │           │             │
+         │  │ (Port 3000│           │             │
+         │  └───────────┘           │             │
+         └──────────────────────────┼─────────────┘
+                                    │
+              ┌─────────────────────┼──────────────────────┐
+              │                     │                      │
+              ▼                     ▼                      ▼
+        MongoDB Atlas          Redis Cache           GCS Bucket
+        (Primary DB)         (Sessions &amp;           (Media Files:
+                              Rate Limits)       Images, Documents)
+</code></pre>
+<br>
+<h3>2.2 Request Routing</h3>
+<br>
+<table><thead>
+<tr><th>Path Pattern</th><th>Destination</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>/</code> and <code>/_next/*</code></td><td>Next.js (Port 3000)</td><td>Frontend dashboard</td></tr>
+<tr><td><code>/api/*</code></td><td>Express (Port 5001)</td><td>REST API</td></tr>
+<tr><td><code>/webhook</code></td><td>Express (Port 5001)</td><td>WhatsApp incoming messages</td></tr>
+<tr><td><code>/api/webhook</code></td><td>Express (Port 5001)</td><td>Alternate webhook path</td></tr>
+<tr><td><code>/api/whatsapp</code></td><td>Express (Port 5001)</td><td>WhatsApp API alias</td></tr>
+<tr><td><code>/health</code></td><td>Express (Port 5001)</td><td>Health check endpoint</td></tr>
+</tbody></table>
+<br>
+<h3>2.3 Deployment Topology</h3>
+<br>
+<li style="margin-left:0px"><strong>Cloud Provider:</strong> Google Cloud Platform (GCP)</li>
+<li style="margin-left:0px"><strong>Runtime:</strong> Cloud Run (Managed Serverless Container)</li>
+<li style="margin-left:0px"><strong>Container:</strong> Single unified Docker container running both Next.js and Express via Supervisord</li>
+<li style="margin-left:0px"><strong>Process Manager:</strong> Supervisord (monitors and restarts both Node processes)</li>
+<li style="margin-left:0px"><strong>Port:</strong> 8080 (Nginx ingress, dynamically injected by Cloud Run)</li>
+<li style="margin-left:0px"><strong>Database:</strong> MongoDB Atlas (or any MongoDB-compatible cluster)</li>
+<li style="margin-left:0px"><strong>Cache:</strong> Redis (optional — has in-memory fallback for rate limits and sessions)</li>
+<li style="margin-left:0px"><strong>Media Storage:</strong> Google Cloud Storage (GCS)</li>
+<li style="margin-left:0px"><strong>Domain:</strong> connect.pugarch.in / sahaj.pugarch.in</li>
+<br>
+<hr>
+<br>
+<h2>3. Technology Stack</h2>
+<br>
+<h3>3.1 Backend</h3>
+<br>
+<table><thead>
+<tr><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+</thead><tbody>
+<tr><td><strong>Node.js</strong></td><td>LTS (20.x)</td><td>JavaScript runtime</td></tr>
+<tr><td><strong>TypeScript</strong></td><td>^5.3</td><td>Type-safe development</td></tr>
+<tr><td><strong>Express.js</strong></td><td>^4.22</td><td>HTTP server &amp; REST API framework</td></tr>
+<tr><td><strong>Mongoose</strong></td><td>^8.21</td><td>MongoDB ODM</td></tr>
+<tr><td><strong>MongoDB</strong></td><td>Atlas (8.x)</td><td>Primary data store</td></tr>
+<tr><td><strong>Redis / ioredis</strong></td><td>^5.3</td><td>Session storage &amp; rate limiting</td></tr>
+<tr><td><strong>jsonwebtoken</strong></td><td>^9.0</td><td>JWT authentication</td></tr>
+<tr><td><strong>bcryptjs</strong></td><td>^2.4</td><td>Password hashing</td></tr>
+<tr><td><strong>Helmet</strong></td><td>^7.1</td><td>HTTP security headers</td></tr>
+<tr><td><strong>express-rate-limit</strong></td><td>^7.1</td><td>Rate limiting middleware</td></tr>
+<tr><td><strong>Nodemailer</strong></td><td>^6.10</td><td>Email notifications</td></tr>
+<tr><td><strong>Axios</strong></td><td>^1.6</td><td>HTTP client (WhatsApp API calls)</td></tr>
+<tr><td><strong>Multer</strong></td><td>^2.0</td><td>File upload handling</td></tr>
+<tr><td><strong>XLSX</strong></td><td>^0.18</td><td>Excel import/export</td></tr>
+<tr><td><strong>Winston</strong></td><td>^3.11</td><td>Structured logging</td></tr>
+<tr><td><strong>Zod / Joi</strong></td><td>^3.22 / ^17.11</td><td>Input validation</td></tr>
+<tr><td><strong>Google Cloud Storage</strong></td><td>^7.19</td><td>Media file storage</td></tr>
+<tr><td><strong>Bull</strong></td><td>^4.12</td><td>Background job queue</td></tr>
+<tr><td><strong>Morgan</strong></td><td>^1.10</td><td>HTTP request logging</td></tr>
+</tbody></table>
+<br>
+<h3>3.2 Frontend</h3>
+<br>
+<table><thead>
+<tr><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+</thead><tbody>
+<tr><td><strong>Next.js</strong></td><td>^14.2</td><td>React framework with App Router</td></tr>
+<tr><td><strong>React</strong></td><td>^18.2</td><td>UI component library</td></tr>
+<tr><td><strong>TypeScript</strong></td><td>^5.3</td><td>Type-safe development</td></tr>
+<tr><td><strong>Tailwind CSS</strong></td><td>^3.4</td><td>Utility-first CSS</td></tr>
+<tr><td><strong>Radix UI</strong></td><td>Various</td><td>Accessible UI primitives</td></tr>
+<tr><td><strong>ReactFlow</strong></td><td>^11.11</td><td>Visual chatbot flow builder canvas</td></tr>
+<tr><td><strong>Recharts</strong></td><td>^2.10</td><td>Data visualization / charts</td></tr>
+<tr><td><strong>React Leaflet</strong></td><td>^4.2</td><td>Interactive maps &amp; geolocation</td></tr>
+<tr><td><strong>SWR</strong></td><td>^2.2</td><td>Data fetching &amp; caching</td></tr>
+<tr><td><strong>React Hook Form</strong></td><td>^7.49</td><td>Form state management</td></tr>
+<tr><td><strong>Zod</strong></td><td>^3.22</td><td>Form validation schemas</td></tr>
+<tr><td><strong>DnD Kit</strong></td><td>^6.3</td><td>Drag-and-drop interactions</td></tr>
+<tr><td><strong>Lucide React</strong></td><td>^0.562</td><td>Icon library</td></tr>
+<tr><td><strong>Axios</strong></td><td>^1.6</td><td>API client</td></tr>
+<tr><td><strong>date-fns</strong></td><td>^4.1</td><td>Date formatting</td></tr>
+<tr><td><strong>XLSX</strong></td><td>^0.18</td><td>Client-side Excel export</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h2>4. Application Modules &amp; Features</h2>
+<br>
+<p>The platform supports the following configurable modules, which can be selectively enabled per company:</p>
+<br>
+<table><thead>
+<tr><th>Module Key</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GRIEVANCE</code></td><td>Citizen complaint registration and management</td></tr>
+<tr><td><code>APPOINTMENT</code></td><td>Appointment booking and scheduling</td></tr>
+<tr><td><code>DOCUMENT_UPLOAD</code></td><td>Media/file attachment to records</td></tr>
+<tr><td><code>GEO_LOCATION</code></td><td>GPS location capture on grievances</td></tr>
+<tr><td><code>AUTO_NOTIFICATION</code></td><td>Automated WhatsApp notifications</td></tr>
+<tr><td><code>EMAIL_NOTIFICATION</code></td><td>Automated email notifications</td></tr>
+<tr><td><code>REPORT_DOWNLOAD</code></td><td>Excel/CSV report export</td></tr>
+<tr><td><code>CUSTOMER_SUPPORT</code></td><td>General support/enquiry flows</td></tr>
+<tr><td><code>ASSIGNMENT_WHATSAPP</code></td><td>WhatsApp notification on assignment</td></tr>
+<tr><td><code>STATUS_UPDATE_WHATSAPP</code></td><td>WhatsApp notification on status changes</td></tr>
+<tr><td><code>COMPANY_INFO</code></td><td>Company information chatbot flow</td></tr>
+<tr><td><code>STATUS_TRACKING</code></td><td>Citizen self-service status lookup</td></tr>
+<tr><td><code>LEAD_CAPTURE</code></td><td>Business lead capture via WhatsApp</td></tr>
+<tr><td><code>HIERARCHICAL_DEPARTMENTS</code></td><td>Parent-child department structure</td></tr>
+<tr><td><code>ANALYTICS</code></td><td>Advanced analytics and KPI dashboards</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h3>4.1 Grievance Management Module</h3>
+<br>
+<h4>Overview</h4>
+<p>The Grievance module is the core module. Citizens submit complaints via WhatsApp chatbot. Administrative staff review, assign, and resolve them from the dashboard.</p>
+<br>
+<h4>Key Features</h4>
+<br>
+<p><strong>For Citizens (via WhatsApp Chatbot):</strong></p>
+<li style="margin-left:0px">Submit a grievance by selecting department, entering description, and optionally attaching media (image/document)</li>
+<li style="margin-left:0px">Receive WhatsApp confirmation with a unique Grievance ID (e.g., <code>GRV000001</code>)</li>
+<li style="margin-left:0px">Track grievance status by sending the ID or using the tracking flow</li>
+<li style="margin-left:0px">Receive real-time status update notifications in WhatsApp</li>
+<br>
+<p><strong>For Administrative Staff (Dashboard):</strong></p>
+<li style="margin-left:0px">View all grievances in a filterable, paginated list</li>
+<li style="margin-left:0px">Filter by: status, department, date range, assignee, flagged status</li>
+<li style="margin-left:0px">Assign grievances to specific officers</li>
+<li style="margin-left:0px">Update status with remarks at each step</li>
+<li style="margin-left:0px">Revert grievances back to previous department/officer</li>
+<li style="margin-left:0px">Attach media (evidence, resolution docs)</li>
+<li style="margin-left:0px">View full timeline history of every action</li>
+<li style="margin-left:0px">Flag grievances for priority attention</li>
+<li style="margin-left:0px">Export grievance data to Excel/CSV</li>
+<li style="margin-left:0px">Bulk import grievances from Excel</li>
+<li style="margin-left:0px">View SLA breach indicators</li>
+<li style="margin-left:0px">Access the "Defaulters Ledger" (officers with persistently overdue grievances)</li>
+<br>
+<h4>Grievance Status Lifecycle</h4>
+<br>
+<pre><code class="language-">
+PENDING → ASSIGNED → IN_PROGRESS → RESOLVED
+              ↓                        ↓
+           REVERTED ←←←←←←←←←←← (re-opens)
+              ↓
+          REJECTED
+</code></pre>
+<br>
+<table><thead>
+<tr><th>Status</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>PENDING</code></td><td>Newly submitted; awaiting assignment</td></tr>
+<tr><td><code>ASSIGNED</code></td><td>Assigned to an officer</td></tr>
+<tr><td><code>IN_PROGRESS</code></td><td>Officer is actively working on it</td></tr>
+<tr><td><code>REVERTED</code></td><td>Sent back for revision or re-routing</td></tr>
+<tr><td><code>RESOLVED</code></td><td>Officer has resolved it</td></tr>
+<tr><td><code>REJECTED</code></td><td>Rejected with reason</td></tr>
+</tbody></table>
+<br>
+<h4>Grievance Data Fields</h4>
+<br>
+<table><thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>grievanceId</code></td><td>String</td><td>Auto-generated unique ID (e.g., <code>GRV000001</code>, per company)</td></tr>
+<tr><td><code>citizenName</code></td><td>String</td><td>Citizen's full name</td></tr>
+<tr><td><code>citizenPhone</code></td><td>String</td><td>Normalized phone number</td></tr>
+<tr><td><code>citizenWhatsApp</code></td><td>String</td><td>WhatsApp number (if different)</td></tr>
+<tr><td><code>description</code></td><td>String</td><td>Complaint description</td></tr>
+<tr><td><code>category</code></td><td>String</td><td>Optional category tag</td></tr>
+<tr><td><code>status</code></td><td>Enum</td><td>Current lifecycle status</td></tr>
+<tr><td><code>departmentId</code></td><td>ObjectId</td><td>Primary department reference</td></tr>
+<tr><td><code>subDepartmentId</code></td><td>ObjectId</td><td>Sub-department (hierarchical)</td></tr>
+<tr><td><code>additionalDepartmentIds</code></td><td>ObjectId[]</td><td>Additional involved departments</td></tr>
+<tr><td><code>assignedTo</code></td><td>ObjectId</td><td>Assigned officer user reference</td></tr>
+<tr><td><code>media</code></td><td>Array</td><td>Attached files (images, docs, videos)</td></tr>
+<tr><td><code>location</code></td><td>GeoJSON Point</td><td>GPS coordinates + address</td></tr>
+<tr><td><code>slaHours</code></td><td>Number</td><td>SLA window in hours (default: 120 hrs)</td></tr>
+<tr><td><code>slaDueDate</code></td><td>Date</td><td>Computed SLA deadline</td></tr>
+<tr><td><code>reminderCount</code></td><td>Number</td><td>Number of automated reminders sent</td></tr>
+<tr><td><code>statusHistory</code></td><td>Array</td><td>Full audit of every status change</td></tr>
+<tr><td><code>timeline</code></td><td>Array</td><td>Chronological activity log</td></tr>
+<tr><td><code>isFlagged</code></td><td>Boolean</td><td>Priority flag</td></tr>
+<tr><td><code>language</code></td><td>Enum</td><td>Citizen's language (en/hi/mr/or)</td></tr>
+<tr><td><code>admin_consent</code></td><td>Boolean</td><td>Consent flag for processing</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h3>4.2 Appointment Management Module</h3>
+<br>
+<h4>Overview</h4>
+<p>Allows citizens to request appointments with government officers via WhatsApp. Administrators schedule and manage appointments from the dashboard.</p>
+<br>
+<h4>Key Features</h4>
+<li style="margin-left:0px">Citizens request appointments via chatbot (purpose, preferred date/time)</li>
+<li style="margin-left:0px">Administrators view pending appointment requests and schedule them</li>
+<li style="margin-left:0px">Availability calendar for managing officer booking slots</li>
+<li style="margin-left:0px">Status tracking with notification at each step</li>
+<li style="margin-left:0px">Officer assignment for appointments</li>
+<br>
+<h4>Appointment Status Lifecycle</h4>
+<br>
+<pre><code class="language-">
+REQUESTED → SCHEDULED → CONFIRMED → COMPLETED
+                              ↓
+                          CANCELLED
+</code></pre>
+<br>
+<table><thead>
+<tr><th>Status</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>REQUESTED</code></td><td>Citizen has requested; pending admin review</td></tr>
+<tr><td><code>SCHEDULED</code></td><td>Admin has scheduled date/time</td></tr>
+<tr><td><code>CONFIRMED</code></td><td>Confirmed by admin</td></tr>
+<tr><td><code>COMPLETED</code></td><td>Appointment took place</td></tr>
+<tr><td><code>CANCELLED</code></td><td>Cancelled with reason</td></tr>
+</tbody></table>
+<br>
+<h4>Appointment Data Fields</h4>
+<br>
+<table><thead>
+<tr><th>Field</th><th>Type</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>appointmentId</code></td><td>String</td><td>Auto-generated ID (e.g., <code>APT000001</code>)</td></tr>
+<tr><td><code>citizenName</code></td><td>String</td><td>Citizen name</td></tr>
+<tr><td><code>citizenPhone</code></td><td>String</td><td>Contact phone</td></tr>
+<tr><td><code>purpose</code></td><td>String</td><td>Reason for appointment</td></tr>
+<tr><td><code>appointmentDate</code></td><td>Date</td><td>Scheduled date</td></tr>
+<tr><td><code>appointmentTime</code></td><td>String</td><td>Time slot</td></tr>
+<tr><td><code>duration</code></td><td>Number</td><td>Duration in minutes (default: 30)</td></tr>
+<tr><td><code>location</code></td><td>String</td><td>Meeting venue</td></tr>
+<tr><td><code>assignedTo</code></td><td>ObjectId</td><td>Assigned officer</td></tr>
+<tr><td><code>statusHistory</code></td><td>Array</td><td>Status change log</td></tr>
+<tr><td><code>timeline</code></td><td>Array</td><td>Full activity history</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h3>4.3 WhatsApp Chatbot &amp; Flow Engine</h3>
+<br>
+<h4>Overview</h4>
+<p>The Dynamic Flow Engine is the intelligence layer that processes every incoming WhatsApp message and drives citizen conversations. Flows are defined per company using a visual drag-and-drop Flow Builder (ReactFlow canvas) in the admin dashboard.</p>
+<br>
+<h4>Flow Architecture</h4>
+<br>
+<p>Each company has one or more <strong>Chatbot Flows</strong>, each comprising:</p>
+<br>
+<table><thead>
+<tr><th>Component</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><strong>Flow</strong></td><td>A named, versioned conversation template (e.g., "Grievance Submission", "Appointment Booking")</td></tr>
+<tr><td><strong>Steps</strong></td><td>Individual nodes in the conversation (message, buttons, input, list, condition, etc.)</td></tr>
+<tr><td><strong>Triggers</strong></td><td>Keywords or events that activate a flow (e.g., "hi", "hello", "menu_grievance")</td></tr>
+<tr><td><strong>Sessions</strong></td><td>Per-citizen state maintained between messages (Redis + MongoDB fallback)</td></tr>
+</tbody></table>
+<br>
+<h4>Step Types</h4>
+<br>
+<table><thead>
+<tr><th>Step Type</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>start</code></td><td>Entry point of the flow</td></tr>
+<tr><td><code>message</code></td><td>Sends a plain text message to the citizen</td></tr>
+<tr><td><code>buttons</code></td><td>Presents up to 3 interactive quick-reply buttons</td></tr>
+<tr><td><code>list</code></td><td>Presents a scrollable list of options (up to 10 items per section)</td></tr>
+<tr><td><code>input</code></td><td>Collects user input (text, number, phone, email, date, image, document, location)</td></tr>
+<tr><td><code>media</code></td><td>Sends or receives a media file</td></tr>
+<tr><td><code>condition</code></td><td>Branches the flow based on a field value</td></tr>
+<tr><td><code>api_call</code></td><td>Makes an external HTTP call</td></tr>
+<tr><td><code>delay</code></td><td>Waits for a configured duration before proceeding</td></tr>
+<tr><td><code>assign_department</code></td><td>Routes to the matching department</td></tr>
+<tr><td><code>dynamic_response</code></td><td>Generates response from dynamic data (e.g., live department list)</td></tr>
+<tr><td><code>end</code></td><td>Terminates the conversation flow</td></tr>
+</tbody></table>
+<br>
+<h4>Multi-Language Support</h4>
+<p>The flow engine picks the best-fit message text in this priority order:</p>
+<li><code>messageTextTranslations[citizenLanguage]</code> (e.g., <code>messageTextTranslations["hi"]</code>)</li>
+<li><code>messageTextTranslations["en"]</code></li>
+<li><code>messageText</code> (default fallback)</li>
+<br>
+<h4>Session Management</h4>
+<li style="margin-left:0px"><strong>Primary Store:</strong> Redis (sub-millisecond session reads)</li>
+<li style="margin-left:0px"><strong>Fallback Store:</strong> MongoDB <code>WhatsAppSession</code> collection (when Redis is unavailable)</li>
+<li style="margin-left:0px"><strong>Session Timeout:</strong> Configurable per flow (default: 30 minutes of inactivity)</li>
+<li style="margin-left:0px"><strong>Duplicate Message Prevention:</strong> Processed message IDs are cached in <code>ProcessedWhatsAppMessage</code> to prevent replay</li>
+<br>
+<h4>Flow Builder (Visual Canvas)</h4>
+<p>The admin dashboard provides a visual drag-and-drop editor built on <strong>ReactFlow</strong>:</p>
+<li style="margin-left:0px">Add, connect, and configure step nodes on a canvas</li>
+<li style="margin-left:0px">Preview step types: Message, Buttons, List, Input, Media, Condition, API Call</li>
+<li style="margin-left:0px">Translate messages per language inline</li>
+<li style="margin-left:0px">Save and activate flows per company</li>
+<li style="margin-left:0px">Support for multiple flow types: <code>grievance</code>, <code>appointment</code>, <code>tracking</code>, <code>custom</code></li>
+<br>
+<hr>
+<br>
+<h3>4.4 Lead Capture Module</h3>
+<br>
+<p>Captures business leads from WhatsApp interactions. Used by enterprise companies.</p>
+<br>
+<table><thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>leadId</code></td><td>Auto-generated ID (e.g., <code>LEAD000001</code>)</td></tr>
+<tr><td><code>name</code></td><td>Lead contact name</td></tr>
+<tr><td><code>projectType</code></td><td>Type of project/enquiry</td></tr>
+<tr><td><code>projectDescription</code></td><td>Detailed description</td></tr>
+<tr><td><code>budgetRange</code></td><td>Estimated budget</td></tr>
+<tr><td><code>timeline</code></td><td>Expected project timeline</td></tr>
+<tr><td><code>email</code> / <code>phone</code></td><td>Contact details</td></tr>
+<tr><td><code>source</code></td><td>Origin: <code>whatsapp</code>, <code>web</code>, <code>manual</code></td></tr>
+<tr><td><code>status</code></td><td><code>NEW</code>, <code>CONTACTED</code>, <code>QUALIFIED</code>, <code>CONVERTED</code>, <code>LOST</code></td></tr>
+<tr><td><code>assignedTo</code></td><td>Assigned sales officer</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h3>4.5 Analytics &amp; Reporting Module</h3>
+<br>
+<h4>Dashboard KPIs</h4>
+<p>Real-time statistics visible on the main dashboard:</p>
+<li style="margin-left:0px">Total grievances (by status breakdown)</li>
+<li style="margin-left:0px">Resolution rate (%)</li>
+<li style="margin-left:0px">Average resolution time</li>
+<li style="margin-left:0px">SLA compliance rate</li>
+<li style="margin-left:0px">Active pending cases count</li>
+<li style="margin-left:0px">Department-wise load</li>
+<br>
+<h4>Detailed Analytics</h4>
+<li style="margin-left:0px">Grievance trends over time (bar/line charts via Recharts)</li>
+<li style="margin-left:0px">Department-wise performance comparison</li>
+<li style="margin-left:0px">Officer-wise case load and resolution metrics</li>
+<li style="margin-left:0px">Geographic distribution of complaints (heat map via Leaflet)</li>
+<li style="margin-left:0px">Appointment volume and completion rates</li>
+<br>
+<h4>Export Capabilities</h4>
+<li style="margin-left:0px">Export grievances to Excel (<code>.xlsx</code>) or CSV</li>
+<li style="margin-left:0px">Filter by date range, department, status before export</li>
+<li style="margin-left:0px">Full data export (SuperAdmin) or scoped data export (Company/Department Admin)</li>
+<br>
+<h4>Import Capabilities</h4>
+<li style="margin-left:0px">Bulk import grievances from Excel template</li>
+<li style="margin-left:0px">Batch size: 500 records per batch</li>
+<li style="margin-left:0px">Max import rows: 10,000 per file</li>
+<li style="margin-left:0px">Supported formats: <code>.xlsx</code>, <code>.csv</code></li>
+<br>
+<hr>
+<br>
+<h3>4.6 Notifications Module</h3>
+<br>
+<p>The platform sends dual-channel notifications (WhatsApp + Email) to citizens and officers at key workflow events.</p>
+<br>
+<h4>Notification Events</h4>
+<br>
+<table><thead>
+<tr><th>Event</th><th>Citizen</th><th>Officer</th><th>Dept Head</th><th>Company Admin</th></tr>
+</thead><tbody>
+<tr><td><code>grievance_created</code></td><td>✓ WhatsApp</td><td>✓</td><td>—</td><td>—</td></tr>
+<tr><td><code>grievance_assigned</code></td><td>✓ WhatsApp</td><td>✓</td><td>—</td><td>—</td></tr>
+<tr><td><code>grievance_status_update</code></td><td>✓ WhatsApp</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><code>grievance_resolved</code></td><td>✓ WhatsApp</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td><code>grievance_reverted</code></td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+<tr><td><code>grievance_reminder</code> (SLA breach)</td><td>—</td><td>✓</td><td>✓ (Level 2+)</td><td>✓ (Level 3)</td></tr>
+<tr><td><code>appointment_created</code></td><td>✓ WhatsApp</td><td>✓</td><td>—</td><td>—</td></tr>
+<tr><td><code>appointment_scheduled</code></td><td>✓ WhatsApp</td><td>✓</td><td>—</td><td>—</td></tr>
+</tbody></table>
+<br>
+<h4>Notification Customisation</h4>
+<li style="margin-left:0px">Per-company notification settings (enable/disable per channel per event)</li>
+<li style="margin-left:0px">Per-user notification override (officer can disable specific event types)</li>
+<li style="margin-left:0px">WhatsApp templates are pre-approved via Meta Business API</li>
+<li style="margin-left:0px">Email templates are configurable per company via dashboard</li>
+<br>
+<h4>In-App Notifications</h4>
+<li style="margin-left:0px">Real-time bell notifications visible in the dashboard header</li>
+<li style="margin-left:0px">Notification read/unread state tracking</li>
+<li style="margin-left:0px">Notifications stored in <code>Notification</code> collection</li>
+<br>
+<hr>
+<br>
+<h2>5. User Roles &amp; Access Control (RBAC)</h2>
+<br>
+<h3>5.1 Role Hierarchy</h3>
+<br>
+<pre><code class="language-">
+Level 0:  SUPER_ADMIN          (Platform-wide; manages all companies)
+Level 1:  COMPANY_ADMIN        (Full access within own company)
+Level 2+: Custom Roles         (Company-defined: Department Head, Officer, etc.)
+</code></pre>
+<br>
+<h3>5.2 System Roles</h3>
+<br>
+<table><thead>
+<tr><th>Role</th><th>Level</th><th>Scope</th><th>Capabilities</th></tr>
+</thead><tbody>
+<tr><td><code>SUPER_ADMIN</code></td><td>0</td><td>Platform</td><td>Create companies, manage all companies, view cross-company data, manage platform configuration, access all APIs</td></tr>
+<tr><td><code>COMPANY_ADMIN</code></td><td>1</td><td>Company</td><td>Full CRUD on all resources within their company, manage departments, users, roles, WhatsApp config, flow builder</td></tr>
+<tr><td>Custom Role (e.g. "Department Head")</td><td>2–5</td><td>Department/Sub-dept</td><td>Configured permissions per module per action</td></tr>
+<tr><td>Custom Role (e.g. "Field Officer")</td><td>5</td><td>Assigned records</td><td>View and update assigned grievances/appointments only</td></tr>
+</tbody></table>
+<br>
+<h3>5.3 Permission Model</h3>
+<br>
+<p>Permissions are structured as <code>module + action</code> pairs:</p>
+<br>
+<table><thead>
+<tr><th>Module</th><th>Available Actions</th></tr>
+</thead><tbody>
+<tr><td><code>GRIEVANCE</code></td><td><code>view</code>, <code>create</code>, <code>update</code>, <code>delete</code>, <code>assign</code>, <code>status_change</code>, <code>revert</code></td></tr>
+<tr><td><code>APPOINTMENT</code></td><td><code>view</code>, <code>create</code>, <code>update</code>, <code>delete</code>, <code>status_change</code></td></tr>
+<tr><td><code>USER_MANAGEMENT</code></td><td><code>view</code>, <code>create</code>, <code>update</code>, <code>delete</code></td></tr>
+<tr><td><code>DEPARTMENTS</code></td><td><code>view</code>, <code>create</code>, <code>update</code>, <code>delete</code></td></tr>
+<tr><td><code>ANALYTICS</code></td><td><code>view</code>, <code>export</code></td></tr>
+<tr><td><code>FLOW_BUILDER</code></td><td><code>view</code>, <code>create</code>, <code>update</code>, <code>delete</code></td></tr>
+<tr><td><code>SETTINGS</code></td><td><code>update</code>, <code>view_audit</code></td></tr>
+</tbody></table>
+<br>
+<h3>5.4 Access Scopes</h3>
+<br>
+<table><thead>
+<tr><th>Scope</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>company</code></td><td>Can view/manage all records in the company</td></tr>
+<tr><td><code>department</code></td><td>Restricted to records within assigned department(s)</td></tr>
+<tr><td><code>subdepartment</code></td><td>Restricted to a specific sub-department</td></tr>
+<tr><td><code>assigned</code></td><td>Only sees records directly assigned to them</td></tr>
+</tbody></table>
+<br>
+<h3>5.5 JWT Authentication</h3>
+<br>
+<li style="margin-left:0px">JWT tokens issued on login (Bearer token in <code>Authorization</code> header)</li>
+<li style="margin-left:0px">Tokens also accepted via <code>?token=</code> query param (for webhook-safe routes)</li>
+<li style="margin-left:0px">Access control resolved at request time by <code>resolveUserAccess()</code> utility</li>
+<li style="margin-left:0px">Company suspension check on every authenticated request</li>
+<li style="margin-left:0px">Password reset via OTP delivered to email or WhatsApp</li>
+<br>
+<h3>5.6 SSO Support</h3>
+<br>
+<li style="margin-left:0px">SSO login endpoint at <code>/auth/sso</code></li>
+<li style="margin-left:0px">Rate-limited (50 attempts per 15 minutes per IP)</li>
+<br>
+<hr>
+<br>
+<h2>6. Business Logic &amp; Workflows</h2>
+<br>
+<h3>6.1 Grievance Lifecycle</h3>
+<br>
+<pre><code class="language-">
+1. CITIZEN MESSAGE (WhatsApp)
+        │
+        ▼
+2. WEBHOOK RECEIVED (Express)
+   - Verify Meta signature
+   - Deduplicate by message ID
+        │
+        ▼
+3. DYNAMIC FLOW ENGINE
+   - Load company's active chatbot flow
+   - Restore citizen session (Redis → MongoDB fallback)
+   - Determine current flow step
+   - Process citizen input (text / button / media / location)
+   - Advance to next step or branch on condition
+        │
+        ▼
+4. GRIEVANCE CREATION (on form completion)
+   - Auto-generate grievanceId (atomic counter, per-company)
+   - Set SLA due date = createdAt + slaHours
+   - Initialize statusHistory and timeline
+   - Save to MongoDB
+   - Send WhatsApp confirmation to citizen
+   - Notify company admins (in-app + WhatsApp)
+        │
+        ▼
+5. ADMIN ASSIGNMENT
+   - Admin selects officer → status changes to ASSIGNED
+   - Push timeline entry
+   - Notify officer via WhatsApp + Email + In-app
+        │
+        ▼
+6. OFFICER WORK
+   - Officer updates status to IN_PROGRESS
+   - Can add remarks, media attachments
+        │
+        ▼
+7. RESOLUTION / REJECTION / REVERSION
+   - On RESOLVED: citizen gets WhatsApp notification, resolvedAt timestamp set
+   - On REJECTED: citizen gets WhatsApp notification with remarks
+   - On REVERTED: re-routed to previous or new department/officer
+        │
+        ▼
+8. CLOSED
+   - closedAt timestamp set
+   - SLA metrics computed
+</code></pre>
+<br>
+<h3>6.2 SLA Escalation Engine</h3>
+<br>
+<p>The SLA Escalation Cron runs <strong>every 1 hour</strong>. It scans all active, assigned grievances across all active companies and enforces a 3-level escalation protocol:</p>
+<br>
+<h4>Escalation Levels</h4>
+<br>
+<table><thead>
+<tr><th>Level</th><th>Trigger</th><th>Action</th><th>Recipients</th></tr>
+</thead><tbody>
+<tr><td><strong>Level 1</strong></td><td>SLA hours exceeded (default: 120 hrs), 0 reminders sent</td><td>Send Reminder #1</td><td>Assigned Officer (WhatsApp + In-app)</td></tr>
+<tr><td><strong>Level 2</strong></td><td>48 hours after Reminder #1, still unresolved</td><td>Send Reminder #2; mark as potential defaulter</td><td>Officer + Department Head (WhatsApp + In-app)</td></tr>
+<tr><td><strong>Level 3</strong></td><td>24 hours after Reminder #2, still unresolved</td><td>Escalate to Collector; flag in Defaulters Ledger</td><td>Company Admin (Collector level) via In-app</td></tr>
+</tbody></table>
+<br>
+<h4>Defaulters Ledger</h4>
+<li style="margin-left:0px">Officers who fail to resolve after Level 2 reminders are marked in the Defaulters Ledger</li>
+<li style="margin-left:0px">Accessible from the dashboard under "Grievance Defaulters"</li>
+<li style="margin-left:0px">Administrators can mark a defaulter as "ignored" to suppress further automated escalation</li>
+<br>
+<h4>SLA Configuration</h4>
+<li style="margin-left:0px">Default SLA: <strong>120 hours</strong> (5 working days)</li>
+<li style="margin-left:0px">Configurable per company in <code>Company.slaSettings.defaultSlaHours</code></li>
+<li style="margin-left:0px">SLA due date is computed at grievance creation: <code>slaDueDate = createdAt + slaHours</code></li>
+<br>
+<h3>6.3 Appointment Lifecycle</h3>
+<br>
+<pre><code class="language-">
+1. CITIZEN requests appointment via WhatsApp chatbot
+2. Record created with status REQUESTED
+3. ADMIN reviews and schedules (sets date, time, duration, location)
+   → Status: SCHEDULED
+   → Citizen receives WhatsApp confirmation
+4. ADMIN confirms appointment
+   → Status: CONFIRMED
+5. Appointment occurs
+   → Admin marks as COMPLETED
+   OR
+   → Admin marks as CANCELLED with reason
+</code></pre>
+<br>
+<h4>Availability Calendar</h4>
+<li style="margin-left:0px">Officers and departments can define available time slots</li>
+<li style="margin-left:0px">Prevents double-booking by checking existing appointments</li>
+<li style="margin-left:0px">Accessible from the "Appointments" section in the dashboard</li>
+<br>
+<h3>6.4 WhatsApp Flow Engine — Step-by-Step</h3>
+<br>
+<p>For each incoming WhatsApp message:</p>
+<br>
+<li><strong>Webhook received</strong> → verify Meta signature (HMAC-SHA256)</li>
+<li><strong>Deduplication check</strong> → query <code>ProcessedWhatsAppMessage</code> by message ID</li>
+<li><strong>Load company</strong> → identify company by WhatsApp phone number ID</li>
+<li><strong>Load flow</strong> → fetch active chatbot flow from cache (<code>FlowCacheService</code>) or MongoDB</li>
+<li><strong>Load/create session</strong> → Redis lookup; MongoDB fallback if Redis offline</li>
+<li><strong>Language detection</strong> → citizen's selected language stored in session</li>
+<li><strong>Process step</strong> →</li>
+<li style="margin-left:30px"><code>buttons</code>: match button_id from response</li>
+<li style="margin-left:30px"><code>list</code>: match list row ID</li>
+<li style="margin-left:30px"><code>input</code>: validate against <code>inputConfig.validation</code>, save to session context</li>
+<li style="margin-left:30px"><code>media</code>: upload to GCS, store URL in session</li>
+<li style="margin-left:30px"><code>location</code>: parse GPS coordinates</li>
+<li style="margin-left:30px"><code>condition</code>: evaluate <code>conditionConfig</code> against session fields</li>
+<li><strong>Advance to nextStepId</strong> → determined by step logic or expected response match</li>
+<li><strong>Send WhatsApp response</strong> → via Meta Graph API v18.0</li>
+<li><strong>Persist session</strong> → save updated session state to Redis (+ MongoDB)</li>
+<br>
+<hr>
+<br>
+<h2>7. Data Models</h2>
+<br>
+<h3>7.1 Company</h3>
+<br>
+<p>Represents an independent tenant (government body or enterprise).</p>
+<br>
+<pre><code class="language-">
+companyId        String     Unique ID (CMP000001)
+name             String     Company name
+nameHi/Or/Mr     String     Multi-language names
+companyType      Enum       GOVERNMENT | CUSTOM_ENTERPRISE
+enabledModules   String[]   List of active modules
+selectedLanguages String[]  Supported languages (always includes 'en')
+theme            Object     primaryColor, secondaryColor, logoUrl
+slaSettings      Object     defaultSlaHours (default: 120)
+notificationSettings Object Role-based notification preferences
+isActive         Boolean
+isSuspended      Boolean
+permissionsVersion Number   For cache-busting permissions
+</code></pre>
+<br>
+<h3>7.2 User</h3>
+<br>
+<p>Represents any user in the system (SuperAdmin, Company Admin, Officer, etc.)</p>
+<br>
+<pre><code class="language-">
+userId           String     Unique ID (USER000001, per company)
+firstName        String
+lastName         String
+email            String     (unique per company)
+phone            String     Normalized E.164 format (unique per company)
+designations     String[]   Multiple designations supported
+departmentIds    ObjectId[] Multiple department assignments
+companyId        ObjectId
+role             String     Role string (e.g. 'COMPANY_ADMIN')
+level            Number     Auth level
+customRoleId     ObjectId   Points to custom Role document
+isSuperAdmin     Boolean
+isActive         Boolean
+notificationSettings Object Per-user channel &amp; event preferences
+responsibleAreas String[]   Forest FSM module area codes
+</code></pre>
+<br>
+<h3>7.3 Department</h3>
+<br>
+<pre><code class="language-">
+departmentId          String     Unique ID (DEPT000001)
+companyId             ObjectId
+parentDepartmentId    ObjectId   For hierarchical structure (nullable)
+name                  String
+nameHi/Or/Mr          String     Multi-language names
+description           String
+contactPerson/Email/Phone String  Dept contact info
+contactUserId         ObjectId   Link to User record
+displayOrder          Number     For ordering in chatbot lists
+isActive              Boolean
+</code></pre>
+<br>
+<h3>7.4 Role (Custom RBAC)</h3>
+<br>
+<pre><code class="language-">
+roleId       String     Unique ID
+companyId    ObjectId
+level        Number     Authorization level
+scope        Enum       company | department | subdepartment | assigned
+name         String     e.g. "Department Head", "Field Officer"
+description  String
+isSystem     Boolean    System roles cannot be deleted
+permissions  Array      [{module, actions[]}]
+</code></pre>
+<br>
+<h3>7.5 Grievance</h3>
+<br>
+<p><em>(See Section 4.1 for full field listing)</em></p>
+<br>
+<p>Key indices: <code>companyId + status</code>, <code>companyId + grievanceId</code> (unique), <code>assignedTo + status</code>, <code>departmentId + status</code>, <code>createdAt</code></p>
+<br>
+<h3>7.6 Appointment</h3>
+<br>
+<p><em>(See Section 4.2 for full field listing)</em></p>
+<br>
+<p>Key indices: <code>companyId + status</code>, <code>companyId + appointmentId</code> (unique), <code>departmentId + appointmentDate</code></p>
+<br>
+<h3>7.7 ChatbotFlow</h3>
+<br>
+<pre><code class="language-">
+flowId              String     Auto-generated (FLOW000001)
+companyId           ObjectId
+flowName            String
+flowType            Enum       grievance | appointment | tracking | custom
+isActive            Boolean
+version             Number
+startStepId         String     ID of the entry step
+steps               Array      Array of FlowStep objects
+triggers            Array      [{triggerType, triggerValue, startStepId}]
+supportedLanguages  String[]
+defaultLanguage     String
+settings            Object     sessionTimeout, maxRetries, errorFallbackMessage
+nodes / edges       Mixed      Persisted React Flow canvas state
+</code></pre>
+<br>
+<h3>7.8 AuditLog</h3>
+<br>
+<p>Immutable record of every significant action.</p>
+<br>
+<pre><code class="language-">
+userId       ObjectId   Acting user
+action       Enum       CREATE|READ|UPDATE|DELETE|LOGIN|LOGOUT|IMPORT|EXPORT|
+                        ASSIGN|STATUS_CHANGE|CONFIG_CHANGE|WHATSAPP_MSG|CONSENT_CHANGE
+resource     String     Entity name (e.g. 'Grievance')
+resourceId   String     Entity ID
+companyId    ObjectId
+details      Mixed      Action-specific metadata
+ipAddress    String
+userAgent    String
+timestamp    Date
+</code></pre>
+<br>
+<h3>7.9 Other Collections</h3>
+<br>
+<table><thead>
+<tr><th>Collection</th><th>Purpose</th></tr>
+</thead><tbody>
+<tr><td><code>WhatsAppSession</code></td><td>Citizen conversation state (MongoDB fallback)</td></tr>
+<tr><td><code>CitizenProfile</code></td><td>Persistent citizen profiles (phone → language preferences, history)</td></tr>
+<tr><td><code>ProcessedWhatsAppMessage</code></td><td>Deduplication store for incoming messages</td></tr>
+<tr><td><code>CompanyWhatsAppConfig</code></td><td>Per-company Meta WhatsApp Business API credentials</td></tr>
+<tr><td><code>CompanyWhatsAppTemplate</code></td><td>Synced WhatsApp message templates per company</td></tr>
+<tr><td><code>CompanyEmailConfig</code></td><td>Per-company SMTP email configuration</td></tr>
+<tr><td><code>CompanyEmailTemplate</code></td><td>Per-company email notification templates</td></tr>
+<tr><td><code>CompanyTemplateMapping</code></td><td>Maps event types to specific WhatsApp templates</td></tr>
+<tr><td><code>WhatsAppTemplate</code></td><td>Platform-level template registry</td></tr>
+<tr><td><code>WhatsAppTemplateSyncLog</code></td><td>Audit of template sync operations</td></tr>
+<tr><td><code>AppointmentAvailability</code></td><td>Officer/dept time slot definitions</td></tr>
+<tr><td><code>Notification</code></td><td>In-app notification records</td></tr>
+<tr><td><code>Counter</code></td><td>Atomic ID counters per entity type per company</td></tr>
+<tr><td><code>Module</code></td><td>Available platform module definitions</td></tr>
+<tr><td><code>Lead</code></td><td>Business lead capture records</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h2>8. API Reference Summary</h2>
+<br>
+<p>Base URL: <code>https://connect.pugarch.in/api</code></p>
+<br>
+<p>All routes (unless noted) require <code>Authorization: Bearer &lt;jwt_token&gt;</code> header.</p>
+<br>
+<h3>Authentication Routes (<code>/api/auth</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth Required</th></tr>
+</thead><tbody>
+<tr><td><code>POST</code></td><td><code>/login</code></td><td>Log in with phone/email + password</td><td>No</td></tr>
+<tr><td><code>POST</code></td><td><code>/sso</code></td><td>SSO login</td><td>No</td></tr>
+<tr><td><code>POST</code></td><td><code>/forgot-password</code></td><td>Request OTP for password reset</td><td>No</td></tr>
+<tr><td><code>POST</code></td><td><code>/reset-password</code></td><td>Reset password using OTP</td><td>No</td></tr>
+<tr><td><code>GET</code></td><td><code>/me</code></td><td>Get current user profile</td><td>Yes</td></tr>
+<tr><td><code>POST</code></td><td><code>/logout</code></td><td>Invalidate session</td><td>Yes</td></tr>
+</tbody></table>
+<br>
+<h3>Grievance Routes (<code>/api/grievances</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/</code></td><td>List grievances (paginated, filtered)</td></tr>
+<tr><td><code>POST</code></td><td><code>/</code></td><td>Create a new grievance</td></tr>
+<tr><td><code>GET</code></td><td><code>/:id</code></td><td>Get grievance details</td></tr>
+<tr><td><code>PUT</code></td><td><code>/:id</code></td><td>Update grievance</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/:id/status</code></td><td>Update status</td></tr>
+<tr><td><code>POST</code></td><td><code>/:id/assign</code></td><td>Assign to officer</td></tr>
+<tr><td><code>POST</code></td><td><code>/:id/revert</code></td><td>Revert grievance</td></tr>
+<tr><td><code>GET</code></td><td><code>/:id/timeline</code></td><td>Get full activity timeline</td></tr>
+<tr><td><code>POST</code></td><td><code>/:id/media</code></td><td>Upload media attachment</td></tr>
+<tr><td><code>POST</code></td><td><code>/:id/reminder</code></td><td>Manually trigger SLA reminder</td></tr>
+<tr><td><code>GET</code></td><td><code>/defaulters</code></td><td>Get defaulter officers list</td></tr>
+<tr><td><code>POST</code></td><td><code>/:id/consent</code></td><td>Update admin consent</td></tr>
+</tbody></table>
+<br>
+<h3>Appointment Routes (<code>/api/appointments</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/</code></td><td>List appointments</td></tr>
+<tr><td><code>POST</code></td><td><code>/</code></td><td>Create appointment</td></tr>
+<tr><td><code>GET</code></td><td><code>/:id</code></td><td>Get appointment</td></tr>
+<tr><td><code>PUT</code></td><td><code>/:id</code></td><td>Update appointment</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/:id/status</code></td><td>Update status</td></tr>
+<tr><td><code>POST</code></td><td><code>/:id/assign</code></td><td>Assign officer</td></tr>
+</tbody></table>
+<br>
+<h3>Assignment Routes (<code>/api/assignments</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>POST</code></td><td><code>/grievance/:id</code></td><td>Assign grievance</td></tr>
+<tr><td><code>POST</code></td><td><code>/appointment/:id</code></td><td>Assign appointment</td></tr>
+</tbody></table>
+<br>
+<h3>User Routes (<code>/api/users</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/</code></td><td>List users (company scoped)</td></tr>
+<tr><td><code>POST</code></td><td><code>/</code></td><td>Create user</td></tr>
+<tr><td><code>GET</code></td><td><code>/:id</code></td><td>Get user details</td></tr>
+<tr><td><code>PUT</code></td><td><code>/:id</code></td><td>Update user</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/:id</code></td><td>Deactivate user</td></tr>
+</tbody></table>
+<br>
+<h3>Department Routes (<code>/api/departments</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/</code></td><td>List departments</td></tr>
+<tr><td><code>POST</code></td><td><code>/</code></td><td>Create department</td></tr>
+<tr><td><code>GET</code></td><td><code>/:id</code></td><td>Get department</td></tr>
+<tr><td><code>PUT</code></td><td><code>/:id</code></td><td>Update department</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/:id</code></td><td>Delete department</td></tr>
+</tbody></table>
+<br>
+<h3>Company Routes (<code>/api/companies</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/</code></td><td>List companies (SuperAdmin only)</td></tr>
+<tr><td><code>POST</code></td><td><code>/</code></td><td>Create company (SuperAdmin only)</td></tr>
+<tr><td><code>GET</code></td><td><code>/:id</code></td><td>Get company details</td></tr>
+<tr><td><code>PUT</code></td><td><code>/:id</code></td><td>Update company</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/:id/modules</code></td><td>Update enabled modules</td></tr>
+</tbody></table>
+<br>
+<h3>Analytics Routes (<code>/api/analytics</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/grievances</code></td><td>Grievance analytics data</td></tr>
+<tr><td><code>GET</code></td><td><code>/appointments</code></td><td>Appointment analytics data</td></tr>
+<tr><td><code>GET</code></td><td><code>/kpis</code></td><td>Key performance indicators</td></tr>
+</tbody></table>
+<br>
+<h3>Dashboard Routes (<code>/api/dashboard</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/stats</code></td><td>Dashboard summary statistics</td></tr>
+<tr><td><code>GET</code></td><td><code>/kpis</code></td><td>KPI metrics</td></tr>
+</tbody></table>
+<br>
+<h3>Import/Export Routes</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>POST</code></td><td><code>/api/import/grievances</code></td><td>Bulk import from Excel</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/export/grievances</code></td><td>Export to Excel/CSV</td></tr>
+</tbody></table>
+<br>
+<h3>WhatsApp Routes (<code>/api/whatsapp</code>, <code>/webhook</code>)</h3>
+<br>
+<table><thead>
+<tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GET</code></td><td><code>/webhook</code></td><td>Meta webhook verification</td></tr>
+<tr><td><code>POST</code></td><td><code>/webhook</code></td><td>Receive incoming WhatsApp messages</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/whatsapp/send</code></td><td>Send outbound message</td></tr>
+</tbody></table>
+<br>
+<h3>Other Routes</h3>
+<br>
+<table><thead>
+<tr><th>Prefix</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>/api/chatbot-flows</code></td><td>Chatbot flow CRUD</td></tr>
+<tr><td><code>/api/whatsapp-config</code></td><td>Company WhatsApp API config</td></tr>
+<tr><td><code>/api/email-config</code></td><td>Company email SMTP config</td></tr>
+<tr><td><code>/api/templates</code></td><td>WhatsApp template management &amp; sync</td></tr>
+<tr><td><code>/api/roles</code></td><td>Custom role CRUD</td></tr>
+<tr><td><code>/api/modules</code></td><td>Module definitions</td></tr>
+<tr><td><code>/api/leads</code></td><td>Lead CRUD</td></tr>
+<tr><td><code>/api/audit</code></td><td>Audit log queries</td></tr>
+<tr><td><code>/api/notifications</code></td><td>In-app notifications</td></tr>
+<tr><td><code>/api/availability</code></td><td>Appointment availability slots</td></tr>
+<tr><td><code>/api/status</code></td><td>Citizen self-service status lookup</td></tr>
+<tr><td><code>/api/health</code></td><td>Detailed health check</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h2>9. Multi-Tenancy Architecture</h2>
+<br>
+<h3>Isolation Model</h3>
+<br>
+<p>Every data collection in MongoDB has a mandatory <code>companyId</code> field. All database queries are scoped to <code>companyId</code> to enforce tenant isolation. There is no shared data between companies except:</p>
+<li style="margin-left:0px">Platform-level module definitions (<code>Module</code> collection)</li>
+<li style="margin-left:0px">Platform-level WhatsApp template catalog (<code>WhatsAppTemplate</code> collection)</li>
+<br>
+<h3>Tenant Identification</h3>
+<br>
+<li style="margin-left:0px">API requests: identified by authenticated user's <code>companyId</code></li>
+<li style="margin-left:0px">WhatsApp webhook: identified by <code>metadata.phone_number_id</code> → mapped to <code>CompanyWhatsAppConfig</code></li>
+<li style="margin-left:0px">Each company configures its own WhatsApp Business API credentials</li>
+<br>
+<h3>ID Generation — Per-Company Counters</h3>
+<br>
+<p>Atomic counters (<code>Counter</code> collection) are maintained per entity type <strong>per company</strong>:</p>
+<li style="margin-left:0px">Grievance IDs restart from <code>GRV000001</code> per company</li>
+<li style="margin-left:0px">Appointment IDs restart from <code>APT000001</code> per company</li>
+<li style="margin-left:0px">User IDs restart from <code>USER000001</code> per company</li>
+<br>
+<p>This prevents ID leakage across tenants (a company cannot infer how many grievances another company has).</p>
+<br>
+<h3>Company Types</h3>
+<br>
+<table><thead>
+<tr><th>Type</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>GOVERNMENT</code></td><td>Government bodies (Collectorate, Forest Dept, etc.)</td></tr>
+<tr><td><code>CUSTOM_ENTERPRISE</code></td><td>Private enterprise or custom deployment</td></tr>
+</tbody></table>
+<br>
+<h3>Rate Limiting — Per Tenant</h3>
+<br>
+<p>A per-tenant rate limiter (<code>tenantLimiter</code>) prevents one tenant from monopolizing server resources. Applied on all <code>/api</code> routes.</p>
+<br>
+<hr>
+<br>
+<h2>10. Security &amp; Compliance</h2>
+<br>
+<h3>Authentication &amp; Session Security</h3>
+<br>
+<table><thead>
+<tr><th>Measure</th><th>Detail</th></tr>
+</thead><tbody>
+<tr><td><strong>JWT Tokens</strong></td><td>Signed with HS256; configurable expiry (default: 7 days)</td></tr>
+<tr><td><strong>Password Hashing</strong></td><td>bcrypt with salt rounds = 10</td></tr>
+<tr><td><strong>Account Lockout</strong></td><td>Inactive users are blocked (<code>isActive: false</code>)</td></tr>
+<tr><td><strong>Company Suspension</strong></td><td>Suspended companies block all user API access</td></tr>
+<tr><td><strong>OTP for Password Reset</strong></td><td>OTP delivered via WhatsApp or email</td></tr>
+</tbody></table>
+<br>
+<h3>API Security</h3>
+<br>
+<table><thead>
+<tr><th>Measure</th><th>Detail</th></tr>
+</thead><tbody>
+<tr><td><strong>Helmet</strong></td><td>Sets secure HTTP headers (X-Content-Type-Options, HSTS, etc.)</td></tr>
+<tr><td><strong>CORS</strong></td><td>Restricted to whitelisted origins in production</td></tr>
+<tr><td><strong>Global Rate Limit</strong></td><td>2000 requests per 15 minutes per IP</td></tr>
+<tr><td><strong>Auth Rate Limit</strong></td><td>50 login attempts per 15 minutes per IP</td></tr>
+<tr><td><strong>Webhook Signature Verification</strong></td><td>HMAC-SHA256 verification of Meta webhook payloads</td></tr>
+<tr><td><strong>Input Validation</strong></td><td>Zod/Joi schemas on all API inputs</td></tr>
+<tr><td><strong>SQL/NoSQL Injection Prevention</strong></td><td>Mongoose ODM parameterised queries</td></tr>
+<tr><td><strong>Sanitization</strong></td><td>Text inputs sanitized before storage</td></tr>
+</tbody></table>
+<br>
+<h3>Data Security</h3>
+<br>
+<table><thead>
+<tr><th>Measure</th><th>Detail</th></tr>
+</thead><tbody>
+<tr><td><strong>Password field</strong></td><td>Excluded from all queries by default (<code>select: false</code>)</td></tr>
+<tr><td><strong>Tenant Isolation</strong></td><td>All queries mandatorily scoped to <code>companyId</code></td></tr>
+<tr><td><strong>Media Storage</strong></td><td>Citizen media stored in private GCS buckets</td></tr>
+<tr><td><strong>Audit Logging</strong></td><td>All destructive actions logged with IP, user agent, timestamp</td></tr>
+<tr><td><strong>Database Safety</strong></td><td><code>databaseSafety</code> middleware logs context for all destructive DB operations</td></tr>
+</tbody></table>
+<br>
+<h3>Compliance</h3>
+<br>
+<li style="margin-left:0px"><strong>WhatsApp Business Policy:</strong> Only template messages sent outside 24-hour conversation windows (Meta's 24-hour messaging policy enforced in <code>isWithin24Hours</code> check)</li>
+<li style="margin-left:0px"><strong>Admin Consent:</strong> <code>admin_consent</code> field on grievances for GDPR/data processing consent tracking</li>
+<li style="margin-left:0px"><strong>Data Localisation:</strong> GCS bucket region configurable (e.g., <code>asia-south1</code> for India)</li>
+<br>
+<hr>
+<br>
+<h2>11. Integrations</h2>
+<br>
+<h3>11.1 Meta WhatsApp Business API</h3>
+<br>
+<li style="margin-left:0px"><strong>API Version:</strong> Graph API v18.0</li>
+<li style="margin-left:0px"><strong>Endpoint:</strong> <code>https://graph.facebook.com/v18.0/{phoneNumberId}/messages</code></li>
+<li style="margin-left:0px"><strong>Authentication:</strong> Bearer token (per company, stored in <code>CompanyWhatsAppConfig</code>)</li>
+<li style="margin-left:0px"><strong>Webhook Events:</strong> <code>messages</code>, <code>statuses</code></li>
+<li style="margin-left:0px"><strong>Template Sync:</strong> Automated cron syncs approved templates from Meta to local DB every hour</li>
+<li style="margin-left:0px"><strong>Message Types Supported:</strong> Text, Template, Interactive Buttons, Interactive List, Image, Document, Video, Location</li>
+<br>
+<h3>11.2 Google Cloud Storage (GCS)</h3>
+<br>
+<li style="margin-left:0px"><strong>Purpose:</strong> Store citizen-uploaded media (images, documents, videos) and admin-uploaded evidence</li>
+<li style="margin-left:0px"><strong>Bucket:</strong> Configurable via <code>GCS_BUCKET_NAME</code> env var</li>
+<li style="margin-left:0px"><strong>Authentication:</strong> Application Default Credentials (ADC) or service account JSON</li>
+<li style="margin-left:0px"><strong>Access:</strong> URLs stored in grievance/appointment <code>media</code> array</li>
+<br>
+<h3>11.3 Email (SMTP / Nodemailer)</h3>
+<br>
+<li style="margin-left:0px"><strong>Configuration:</strong> Per-company SMTP settings stored in <code>CompanyEmailConfig</code></li>
+<li style="margin-left:0px"><strong>Templates:</strong> HTML email templates stored in <code>CompanyEmailTemplate</code></li>
+<li style="margin-left:0px"><strong>Fallback:</strong> Environment-level SMTP config for system notifications</li>
+<li style="margin-left:0px"><strong>Events:</strong> All notification events listed in Section 4.6</li>
+<br>
+<h3>11.4 Redis</h3>
+<br>
+<li style="margin-left:0px"><strong>Purpose:</strong> WhatsApp session storage, per-tenant rate limiting, flow caching</li>
+<li style="margin-left:0px"><strong>Client:</strong> ioredis</li>
+<li style="margin-left:0px"><strong>Fallback:</strong> In-memory Map (rate limits) + MongoDB (sessions) when Redis is unavailable</li>
+<li style="margin-left:0px"><strong>Configuration:</strong> <code>REDIS_HOST</code>, <code>REDIS_PORT</code>, <code>REDIS_PASSWORD</code> environment variables</li>
+<br>
+<h3>11.5 MongoDB Atlas</h3>
+<br>
+<li style="margin-left:0px"><strong>ODM:</strong> Mongoose 8.x</li>
+<li style="margin-left:0px"><strong>Connection Pooling:</strong> Managed by Mongoose</li>
+<li style="margin-left:0px"><strong>Indexes:</strong> Compound indexes on all frequently queried field combinations</li>
+<li style="margin-left:0px"><strong>Geospatial:</strong> 2dsphere index on <code>Grievance.location.coordinates</code></li>
+<br>
+<hr>
+<br>
+<h2>12. Deployment &amp; Infrastructure</h2>
+<br>
+<h3>12.1 Container Architecture</h3>
+<br>
+<p>The project uses a <strong>monorepo</strong> structure with a single unified Dockerfile:</p>
+<br>
+<pre><code class="language-">
+Root Dockerfile
+├── Stage 1: Build Next.js (output: standalone)
+├── Stage 2: Build Express TypeScript (tsc → dist/)
+└── Stage 3: Production Image
+    ├── Node.js 20 Alpine base
+    ├── Nginx (reverse proxy on port 8080)
+    ├── Supervisord (process manager)
+    ├── Next.js standalone (port 3000)
+    └── Express API (port 5001)
+</code></pre>
+<br>
+<h3>12.2 Startup Sequence</h3>
+<br>
+<li>Supervisord starts both Next.js and Express simultaneously</li>
+<li><code>wait-and-start-nginx.sh</code> polls Express health (<code>5001/health</code>) and Next.js (<code>3000</code>)</li>
+<li>Only after both services respond does Nginx open port 8080 for traffic</li>
+<li>Express performs async initialization (GCS, MongoDB, Redis, counters, crons)</li>
+<li>SLA Escalation Cron starts after 30-second delay</li>
+<li>WhatsApp Template Sync Cron starts</li>
+<br>
+<h3>12.3 Cloud Run Configuration</h3>
+<br>
+<table><thead>
+<tr><th>Parameter</th><th>Recommended Value</th></tr>
+</thead><tbody>
+<tr><td><strong>Memory</strong></td><td>2 GiB</td></tr>
+<tr><td><strong>CPU</strong></td><td>2 vCPU</td></tr>
+<tr><td><strong>Min Instances</strong></td><td>1 (keep warm for WhatsApp webhooks)</td></tr>
+<tr><td><strong>Max Instances</strong></td><td>10</td></tr>
+<tr><td><strong>Request Timeout</strong></td><td>300 seconds</td></tr>
+<tr><td><strong>Port</strong></td><td>8080</td></tr>
+<tr><td><strong>Region</strong></td><td>asia-southeast1 (Singapore) or asia-south1 (Mumbai)</td></tr>
+</tbody></table>
+<br>
+<h3>12.4 CI/CD</h3>
+<br>
+<li style="margin-left:0px"><strong>Build System:</strong> Google Cloud Build (<code>cloudbuild.yaml</code>)</li>
+<li style="margin-left:0px"><strong>Trigger:</strong> Push to <code>main</code> branch</li>
+<li style="margin-left:0px"><strong>Pipeline:</strong> Build Docker image → Push to Artifact Registry → Deploy to Cloud Run</li>
+<li style="margin-left:0px"><strong>Image Tagging:</strong> Immutable SHA tags + <code>latest</code></li>
+<br>
+<h3>12.5 Docker Compose (Local Development)</h3>
+<br>
+<pre><code class="language-yaml">
+Services:
+  - portal (Next.js + Express, port 8080)
+  - mongodb (port 27017)
+  - redis (port 6379)
+</code></pre>
+<br>
+<hr>
+<br>
+<h2>13. Configuration Reference</h2>
+<br>
+<h3>13.1 Required Environment Variables</h3>
+<br>
+<table><thead>
+<tr><th>Variable</th><th>Description</th></tr>
+</thead><tbody>
+<tr><td><code>NODE_ENV</code></td><td><code>production</code> or <code>development</code></td></tr>
+<tr><td><code>MONGODB_URI</code></td><td>MongoDB connection URI</td></tr>
+<tr><td><code>JWT_SECRET</code></td><td>JWT signing secret (min 32 chars)</td></tr>
+<tr><td><code>GCP_PROJECT_ID</code></td><td>GCP Project ID</td></tr>
+<tr><td><code>GCS_BUCKET_NAME</code></td><td>GCS bucket for media storage</td></tr>
+</tbody></table>
+<br>
+<h3>13.2 Optional Environment Variables</h3>
+<br>
+<table><thead>
+<tr><th>Variable</th><th>Description</th><th>Default</th></tr>
+</thead><tbody>
+<tr><td><code>PORT</code></td><td>Server port</td><td><code>5001</code> (overridden by Cloud Run)</td></tr>
+<tr><td><code>FRONTEND_URL</code></td><td>Allowed CORS origins</td><td><code>https://connect.pugarch.in</code></td></tr>
+<tr><td><code>JWT_EXPIRES_IN</code></td><td>JWT token lifespan</td><td><code>7d</code></td></tr>
+<tr><td><code>REDIS_HOST</code></td><td>Redis hostname</td><td>— (in-memory fallback)</td></tr>
+<tr><td><code>REDIS_PORT</code></td><td>Redis port</td><td><code>6379</code></td></tr>
+<tr><td><code>REDIS_PASSWORD</code></td><td>Redis auth password</td><td>—</td></tr>
+<tr><td><code>GCP_SERVICE_ACCOUNT_JSON</code></td><td>Service account credentials</td><td>— (ADC used on GCP)</td></tr>
+<tr><td><code>ALLOW_EMPTY_USERS_ON_STARTUP</code></td><td>Allow fresh DB start</td><td><code>false</code></td></tr>
+</tbody></table>
+<br>
+<h3>13.3 WhatsApp API Limits (Enforced in Code)</h3>
+<br>
+<table><thead>
+<tr><th>Resource</th><th>Limit</th></tr>
+</thead><tbody>
+<tr><td>Interactive Buttons</td><td>Max 3 per message</td></tr>
+<tr><td>Button Title</td><td>Max 20 characters</td></tr>
+<tr><td>List Sections</td><td>Max 10 rows per section</td></tr>
+<tr><td>Row Title</td><td>Max 24 characters</td></tr>
+<tr><td>Message Body</td><td>Max 4096 characters</td></tr>
+<tr><td>Rate Limit</td><td>30 messages/min, 500/hr, 5000/day per company</td></tr>
+<tr><td>Recipients per minute</td><td>Max 10 unique recipients</td></tr>
+</tbody></table>
+<br>
+<h3>13.4 Pagination Defaults</h3>
+<br>
+<table><thead>
+<tr><th>Parameter</th><th>Value</th></tr>
+</thead><tbody>
+<tr><td>Default Page</td><td>1</td></tr>
+<tr><td>Default Page Size</td><td>20</td></tr>
+<tr><td>Maximum Page Size</td><td>100</td></tr>
+</tbody></table>
+<br>
+<h3>13.5 File Upload Limits</h3>
+<br>
+<table><thead>
+<tr><th>Parameter</th><th>Value</th></tr>
+</thead><tbody>
+<tr><td>Max File Size</td><td>10 MB</td></tr>
+<tr><td>Allowed Image Types</td><td>JPEG, PNG, JPG, WebP</td></tr>
+<tr><td>Allowed Document Types</td><td>PDF, DOC, DOCX</td></tr>
+<tr><td>Allowed Video Types</td><td>Via WhatsApp only</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<h2>14. Glossary</h2>
+<br>
+<table><thead>
+<tr><th>Term</th><th>Definition</th></tr>
+</thead><tbody>
+<tr><td><strong>Chatbot Flow</strong></td><td>A versioned, visual conversation script defining how the WhatsApp bot interacts with citizens</td></tr>
+<tr><td><strong>Company</strong></td><td>A tenant on the platform; can be a government body or enterprise</td></tr>
+<tr><td><strong>Citizen</strong></td><td>End user interacting via WhatsApp; not a registered platform user</td></tr>
+<tr><td><strong>Company Admin</strong></td><td>Highest-level user within a company; manages all resources</td></tr>
+<tr><td><strong>Defaulter</strong></td><td>An officer who has not resolved an overdue grievance after multiple automated reminders</td></tr>
+<tr><td><strong>Dynamic Flow Engine</strong></td><td>The backend service that processes incoming WhatsApp messages and drives chatbot conversations</td></tr>
+<tr><td><strong>GCS</strong></td><td>Google Cloud Storage — used for media file uploads</td></tr>
+<tr><td><strong>Grievance</strong></td><td>A formal citizen complaint registered through the platform</td></tr>
+<tr><td><strong>Meta Graph API</strong></td><td>Facebook/Meta's API for WhatsApp Business messaging</td></tr>
+<tr><td><strong>SLA</strong></td><td>Service Level Agreement — the maximum time allowed to resolve a grievance</td></tr>
+<tr><td><strong>SLA Breach</strong></td><td>A grievance that has exceeded its SLA deadline without resolution</td></tr>
+<tr><td><strong>SuperAdmin</strong></td><td>Platform-level administrator managing all companies</td></tr>
+<tr><td><strong>Tenant</strong></td><td>Synonym for Company; an isolated organisation on the platform</td></tr>
+<tr><td><strong>Webhook</strong></td><td>An HTTP callback sent by Meta's servers when a WhatsApp message is received</td></tr>
+<tr><td><strong>WhatsApp Template</strong></td><td>Pre-approved message format required by Meta for outbound notifications</td></tr>
+<tr><td><strong>RBAC</strong></td><td>Role-Based Access Control — permission model governing who can do what</td></tr>
+<tr><td><strong>In-App Notification</strong></td><td>Notification visible in the dashboard bell icon</td></tr>
+<tr><td><strong>Flow Step</strong></td><td>A single node in a chatbot flow (e.g., a question, a button menu)</td></tr>
+<tr><td><strong>Session</strong></td><td>Temporary per-citizen conversation state stored in Redis</td></tr>
+<tr><td><strong>SLA Escalation Cron</strong></td><td>Scheduled background job that checks SLA breach and fires reminders</td></tr>
+<tr><td><strong>IST</strong></td><td>Indian Standard Time — all timestamps stored in UTC, converted to IST for display</td></tr>
+</tbody></table>
+<br>
+<hr>
+<br>
+<p><em>Document generated from source code analysis of PugArch Connect Portal v5.0</em>  </p>
+<p><em>Repository: connect.pugarch</em>  </p>
+<p><em>All rights reserved — PugArch 2026</em></p>
+<br>
+
+<hr>
+<p style="text-align:center; color:#718096; font-size:11px; margin-top:40px;">
+  PugArch Connect Portal &mdash; Technical Documentation &mdash; v5.0 &mdash; November 2026<br>
+  Generated from source code analysis &mdash; All rights reserved &copy; PugArch 2026
+</p>
+
+</body>
+</html>
