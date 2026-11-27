@@ -61,6 +61,7 @@ import { cn } from "@/lib/utils";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardNavigation } from "@/components/dashboard/DashboardNavigation";
 import { formatTo10Digits, normalizePhoneNumber } from "@/lib/utils/phoneUtils";
+import { parseLocalDateBound } from "@/lib/utils/dateRange";
 import { useGrievances } from "@/lib/query/useGrievances";
 import { useDashboardStats } from "@/lib/query/useDashboardStats";
 import { useDashboardKpis } from "@/lib/query/useDashboardKpis";
@@ -952,6 +953,8 @@ function DashboardPageClientContent() {
         department: "",
         assignmentStatus: "",
         dateRange: "",
+        startDate: "",
+        endDate: "",
       });
       setOverviewFilters({ mainDeptId: "", subDeptId: "" });
       setAnalyticsFilters({ mainDeptId: "", subDeptId: "", period: "week", startDate: "", endDate: "" });
@@ -1014,6 +1017,8 @@ function DashboardPageClientContent() {
     assignmentStatus: "",
     slaStatus: "",
     dateRange: "",
+    startDate: "",
+    endDate: "",
     priority: "",
   });
 
@@ -1085,6 +1090,10 @@ function DashboardPageClientContent() {
     priority: grievanceFilters.priority,
     search: grievanceSearch,
     slaStatus: grievanceFilters.slaStatus,
+    dateRange: grievanceFilters.dateRange || undefined,
+    startDate: grievanceFilters.dateRange === "custom" ? grievanceFilters.startDate || undefined : undefined,
+    endDate: grievanceFilters.dateRange === "custom" ? grievanceFilters.endDate || undefined : undefined,
+    tzOffset: grievanceFilters.dateRange ? new Date().getTimezoneOffset() : undefined,
     enabled: mounted && (visitedTabs.has("grievances") || activeTab === "grievances"),
   });
 
@@ -1204,6 +1213,9 @@ function DashboardPageClientContent() {
 
   const [appointmentSearch, setAppointmentSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshLockRef = useRef(false);
+  const detailLockRef = useRef(false);
+  const deleteLockRef = useRef(false);
 
 
   // Helper to check module access - strictly respects company config if viewing a specific company
@@ -1317,6 +1329,8 @@ function DashboardPageClientContent() {
       return;
     }
 
+    if (detailLockRef.current) return;
+    detailLockRef.current = true;
     try {
       const response = await grievanceAPI.getById(grievanceId);
       if (response.success && response.data?.grievance) {
@@ -1325,6 +1339,8 @@ function DashboardPageClientContent() {
       }
     } catch (error: any) {
       toast.error("Failed to load grievance details");
+    } finally {
+      detailLockRef.current = false;
     }
   };
 
@@ -1341,6 +1357,8 @@ function DashboardPageClientContent() {
       return;
     }
 
+    if (detailLockRef.current) return;
+    detailLockRef.current = true;
     try {
       const response = await appointmentAPI.getById(appointmentId);
       if (response.success) {
@@ -1349,11 +1367,14 @@ function DashboardPageClientContent() {
       }
     } catch (error: any) {
       toast.error("Failed to load details");
+    } finally {
+      detailLockRef.current = false;
     }
   };
 
   const openUserDetail = async (userId: string) => {
-    if (!userId) return;
+    if (!userId || detailLockRef.current) return;
+    detailLockRef.current = true;
     try {
       const response = await userAPI.getById(userId);
       if (response.success) {
@@ -1362,6 +1383,8 @@ function DashboardPageClientContent() {
       }
     } catch (error: any) {
       toast.error("Failed to load user details");
+    } finally {
+      detailLockRef.current = false;
     }
   };
 
@@ -1552,7 +1575,7 @@ function DashboardPageClientContent() {
 
   // Bulk delete handlers
   const handleBulkDeleteGrievances = async () => {
-    if (selectedGrievances.size === 0) return;
+    if (selectedGrievances.size === 0 || isDeleting || deleteLockRef.current) return;
 
     if (
       !confirm(
@@ -1562,6 +1585,7 @@ function DashboardPageClientContent() {
       return;
     }
 
+    deleteLockRef.current = true;
     setIsDeleting(true);
     try {
       const response = await grievanceAPI.deleteBulk(
@@ -1586,12 +1610,13 @@ function DashboardPageClientContent() {
           "Failed to delete grievances",
       );
     } finally {
+      deleteLockRef.current = false;
       setIsDeleting(false);
     }
   };
 
   const handleDeleteGrievance = async (grievance: Grievance) => {
-    if (!canDeleteGrievance) return;
+    if (!canDeleteGrievance || isDeleting || deleteLockRef.current) return;
 
     if (
       !confirm(
@@ -1601,6 +1626,7 @@ function DashboardPageClientContent() {
       return;
     }
 
+    deleteLockRef.current = true;
     setIsDeleting(true);
     try {
       const response = await grievanceAPI.delete(grievance._id);
@@ -1627,6 +1653,7 @@ function DashboardPageClientContent() {
           "Failed to delete grievance",
       );
     } finally {
+      deleteLockRef.current = false;
       setIsDeleting(false);
     }
   };
@@ -1945,7 +1972,7 @@ function DashboardPageClientContent() {
       
       // If we are in the relevant tab, use the hook's refetch for consistency
       if (activeTab === "overview" || activeTab === "analytics") {
-        await refetchDashboardStats();
+        await refetchDashboardStats({ silent: refresh });
         return;
       }
 
@@ -2040,7 +2067,7 @@ function DashboardPageClientContent() {
       if (!isSilent) setLoadingDepartments(true);
       
       if (activeTab === "departments") {
-        await refetchDepartmentsHook();
+        await refetchDepartmentsHook({ silent: isSilent });
         if (!isSilent) setLoadingDepartments(false);
         return;
       }
@@ -2260,7 +2287,7 @@ function DashboardPageClientContent() {
       if (!isSilent) setLoadingUsers(true);
 
       if (activeTab === "users") {
-        await refetchUsersHook();
+        await refetchUsersHook({ silent: isSilent });
         if (!isSilent) setLoadingUsers(false);
         return;
       }
@@ -2346,7 +2373,7 @@ function DashboardPageClientContent() {
       }
 
       if (activeTab === "grievances") {
-        await refetchGrievances();
+        await refetchGrievances({ silent: isSilent });
         return;
       }
       if (!isSilent) setLoadingGrievances(true);
@@ -2368,6 +2395,19 @@ function DashboardPageClientContent() {
               : grievanceFilters.assignmentStatus === "unassigned"
                 ? "NONE"
                 : undefined,
+          slaStatus: grievanceFilters.slaStatus || undefined,
+          dateRange: grievanceFilters.dateRange || undefined,
+          startDate:
+            grievanceFilters.dateRange === "custom"
+              ? grievanceFilters.startDate || undefined
+              : undefined,
+          endDate:
+            grievanceFilters.dateRange === "custom"
+              ? grievanceFilters.endDate || undefined
+              : undefined,
+          tzOffset: grievanceFilters.dateRange
+            ? new Date().getTimezoneOffset()
+            : undefined,
           companyId:
             isSuperAdminUser && drilldownId ? drilldownId : undefined,
         });
@@ -2478,6 +2518,8 @@ function DashboardPageClientContent() {
   }, [targetCompanyId]);
 
   const handleRefresh = useCallback(async () => {
+    if (refreshing || refreshLockRef.current) return;
+    refreshLockRef.current = true;
     setRefreshing(true);
     try {
       if (activeTab === "overview") {
@@ -2499,9 +2541,11 @@ function DashboardPageClientContent() {
     } catch (error) {
       toast.error("Failed to refresh data");
     } finally {
+      refreshLockRef.current = false;
       setRefreshing(false);
     }
   }, [
+    refreshing,
     activeTab,
     fetchDashboardData,
     fetchGrievances,
@@ -2922,17 +2966,36 @@ function DashboardPageClientContent() {
       // Date range filter
       if (grievanceFilters.dateRange) {
         const now = new Date();
+        const startOfToday = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          0,
+          0,
+          0,
+          0,
+        );
+        const customStart = grievanceFilters.startDate
+          ? parseLocalDateBound(grievanceFilters.startDate, false)
+          : null;
+        const customEnd = grievanceFilters.endDate
+          ? parseLocalDateBound(grievanceFilters.endDate, true)
+          : null;
+
         filteredData = filteredData.filter((g: Grievance) => {
           const createdAt = new Date(g.createdAt);
-          const daysDiff =
-            (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+          if (Number.isNaN(createdAt.getTime())) return false;
           switch (grievanceFilters.dateRange) {
             case "today":
-              return daysDiff < 1;
+              return createdAt >= startOfToday;
             case "week":
-              return daysDiff <= 7;
+              return now.getTime() - createdAt.getTime() <= 7 * 86400000;
             case "month":
-              return daysDiff <= 30;
+              return now.getTime() - createdAt.getTime() <= 30 * 86400000;
+            case "custom":
+              if (customStart && createdAt < customStart) return false;
+              if (customEnd && createdAt > customEnd) return false;
+              return true;
             default:
               return true;
           }
@@ -3543,6 +3606,7 @@ function DashboardPageClientContent() {
                 exportToCSV,
                 fetchDashboardData,
                 fetchDepartments,
+                fetchGrievances,
                 fetchUsers,
                 filteredDeptCounts,
                 filteredRolesByHierarchy,
@@ -3579,6 +3643,9 @@ function DashboardPageClientContent() {
                 isSubDepartmentAdminRole,
                 isSuperAdminDrilldown,
                 isSuperAdminUser,
+                isUpdatingDepartments: isLoadingDeptsFromHook,
+                isUpdatingGrievances: isLoadingGrievancesFromHook,
+                isUpdatingUsers: isLoadingUsersFromHook,
                 isViewingCompany,
                 leads,
                 loadingDepartments,

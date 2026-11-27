@@ -13,6 +13,10 @@ interface UseGrievancesParams {
   priority?: string;
   search?: string;
   slaStatus?: string;
+  dateRange?: string;
+  startDate?: string;
+  endDate?: string;
+  tzOffset?: number;
   enabled?: boolean;
 }
 
@@ -20,7 +24,20 @@ export function useGrievances(params: UseGrievancesParams) {
   const { enabled = true, ...queryParam } = params;
   
   return useCachedQuery({
-    queryKey: ["grievances", params.page, params.limit, params.status, params.companyId, params.departmentId, params.priority, params.search, params.slaStatus],
+    queryKey: [
+      "grievances",
+      params.page,
+      params.limit,
+      params.status,
+      params.companyId,
+      params.departmentId,
+      params.priority,
+      params.search,
+      params.slaStatus,
+      params.dateRange,
+      params.startDate,
+      params.endDate,
+    ],
     queryFn: async () => {
       const response = await grievanceAPI.getAll(queryParam);
       if (response?.success && response.data) {

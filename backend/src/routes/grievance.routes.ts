@@ -36,12 +36,106 @@ const JHARSUGUDA_COMPANY_ID = process.env.JHARSUGUDA_COMPANY_ID || '69ad4c6eb1ad
 router.use(requireDatabaseConnection);
 router.use(authenticate);
 
+function parseDateBoundWithOffset(
+  dateStr: unknown,
+  isEnd: boolean,
+  offsetMinutes: number
+): Date | null {
+  if (typeof dateStr !== 'string') return null;
+  const trimmed = dateStr.trim();
+  const match = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10) - 1;
+  const day = parseInt(match[3], 10);
+
+  const check = new Date(Date.UTC(year, month, day));
+  if (
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month ||
+    check.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  const utcMs = Date.UTC(
+    year,
+    month,
+    day,
+    isEnd ? 23 : 0,
+    isEnd ? 59 : 0,
+    isEnd ? 59 : 0,
+    isEnd ? 999 : 0
+  );
+  return new Date(utcMs + offsetMinutes * 60000);
+}
+
+function buildCreatedAtRange(
+  dateRange: unknown,
+  startDate: unknown,
+  endDate: unknown,
+  tzOffset: unknown
+): { $gte?: Date; $lte?: Date } | null {
+  const parsedOffset =
+    tzOffset !== undefined && tzOffset !== '' && Number.isFinite(Number(tzOffset))
+      ? Math.max(-840, Math.min(840, Number(tzOffset)))
+      : new Date().getTimezoneOffset();
+
+  const normalizedRange = typeof dateRange === 'string' ? dateRange.trim().toLowerCase() : '';
+  const now = new Date();
+
+  if (normalizedRange === 'today') {
+    const localNow = new Date(now.getTime() - parsedOffset * 60000);
+    const y = localNow.getUTCFullYear();
+    const m = String(localNow.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(localNow.getUTCDate()).padStart(2, '0');
+    const todayStr = `${y}-${m}-${d}`;
+    const start = parseDateBoundWithOffset(todayStr, false, parsedOffset);
+    const end = parseDateBoundWithOffset(todayStr, true, parsedOffset);
+    return start && end ? { $gte: start, $lte: end } : null;
+  }
+
+  if (normalizedRange === 'week') {
+    return { $gte: new Date(now.getTime() - 7 * 86400000) };
+  }
+
+  if (normalizedRange === 'month') {
+    return { $gte: new Date(now.getTime() - 30 * 86400000) };
+  }
+
+  if (normalizedRange === 'custom' || startDate || endDate) {
+    const start = parseDateBoundWithOffset(startDate, false, parsedOffset);
+    const end = parseDateBoundWithOffset(endDate, true, parsedOffset);
+    if (!start && !end) return null;
+    const range: { $gte?: Date; $lte?: Date } = {};
+    if (start) range.$gte = start;
+    if (end) range.$lte = end;
+    return range;
+  }
+
+  return null;
+}
+
 // @route   GET /api/grievances
 // @desc    Get all grievances (scoped by role)
 // @access  Private
 router.get('/', requirePermission(Permission.READ_GRIEVANCE), async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 20, status, companyId, departmentId, assignedTo, search, slaStatus } = req.query;
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      companyId,
+      departmentId,
+      assignedTo,
+      search,
+      slaStatus,
+      dateRange,
+      startDate,
+      endDate,
+      tzOffset,
+    } = req.query;
     const currentUser = req.user!;
     const targetCompanyId = currentUser.isSuperAdmin ? companyId : currentUser.companyId;
 
@@ -227,6 +321,11 @@ router.get('/', requirePermission(Permission.READ_GRIEVANCE), async (req: Reques
       } else {
           query.$or = searchCriteria;
       }
+    }
+
+    const createdAtRange = buildCreatedAtRange(dateRange, startDate, endDate, tzOffset);
+    if (createdAtRange) {
+      query.createdAt = createdAtRange;
     }
 
     const grievances = await Grievance.find(query)

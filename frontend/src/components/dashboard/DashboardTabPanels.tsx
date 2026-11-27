@@ -69,6 +69,7 @@ import { OverviewCompanyInfoCard } from "@/components/dashboard/OverviewCompanyI
 import { OverviewDepartmentSummary } from "@/components/dashboard/OverviewDepartmentSummary";
 import { OverviewGrievanceKpis } from "@/components/dashboard/OverviewGrievanceKpis";
 import { AnalyticsDateFilterBar } from "@/components/dashboard/AnalyticsDateFilterBar";
+import { GrievanceCustomDateBar } from "@/components/dashboard/GrievanceCustomDateBar";
 import { DashboardDialogs } from "@/components/dashboard/DashboardDialogs";
 import { LoadingDots, SortIcon } from "@/components/dashboard/DashboardPrimitives";
 import { ProfileTab } from "@/components/dashboard/tabs/ProfileTab";
@@ -184,6 +185,7 @@ import {
   LayoutGrid,
   Menu,
   ArrowRightLeft,
+  Loader2,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -280,6 +282,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
     exportToCSV,
     fetchDashboardData,
     fetchDepartments,
+    fetchGrievances,
     fetchUsers,
     filteredDeptCounts,
     filteredRolesByHierarchy,
@@ -317,6 +320,9 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
     isSubDepartmentAdminRole,
     isSuperAdminDrilldown,
     isSuperAdminUser,
+    isUpdatingDepartments,
+    isUpdatingGrievances,
+    isUpdatingUsers,
     isViewingCompany,
     leads,
     loadingDepartments,
@@ -413,6 +419,29 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
     users,
   } = props;
 
+  const analyticsBarFilters = useMemo(
+    () => ({
+      period: analyticsFilters?.period || "week",
+      startDate: analyticsFilters?.startDate || "",
+      endDate: analyticsFilters?.endDate || "",
+    }),
+    [analyticsFilters?.period, analyticsFilters?.startDate, analyticsFilters?.endDate],
+  );
+
+  const handleAnalyticsFilterChange = useCallback(
+    (newFilters: any) => {
+      if (setAnalyticsFilters) {
+        setAnalyticsFilters((prev: any) => ({
+          ...prev,
+          period: newFilters.period,
+          startDate: newFilters.startDate || "",
+          endDate: newFilters.endDate || "",
+        }));
+      }
+    },
+    [setAnalyticsFilters],
+  );
+
   const getDepartmentHeadUserId = (dept: any) => {
     if (dept?.contactUserId) {
       return typeof dept.contactUserId === "object"
@@ -486,6 +515,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       status: "PENDING,IN_PROGRESS,ASSIGNED",
                       slaStatus: "",
                       dateRange: "",
+                      startDate: "",
+                      endDate: "",
                       priority: "",
                       assignmentStatus: ""
                     }));
@@ -499,6 +530,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       status: "", // All active status
                       slaStatus: "OVERDUE",
                       dateRange: "",
+                      startDate: "",
+                      endDate: "",
                       priority: "",
                       assignmentStatus: ""
                     }));
@@ -512,6 +545,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       status: "REVERTED",
                       slaStatus: "",
                       dateRange: "",
+                      startDate: "",
+                      endDate: "",
                       priority: "",
                       assignmentStatus: ""
                     }));
@@ -525,6 +560,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       status: "RESOLVED",
                       slaStatus: "",
                       dateRange: "",
+                      startDate: "",
+                      endDate: "",
                       priority: "",
                       assignmentStatus: ""
                     }));
@@ -538,6 +575,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       status: "REJECTED",
                       slaStatus: "",
                       dateRange: "",
+                      startDate: "",
+                      endDate: "",
                       priority: "",
                       assignmentStatus: ""
                     }));
@@ -551,6 +590,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                       status: "ALL",
                       slaStatus: "",
                       dateRange: "",
+                      startDate: "",
+                      endDate: "",
                       priority: "",
                       assignmentStatus: ""
                     }));
@@ -600,21 +641,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                   {/* Graph & Analytics Timeline Filter Bar */}
                   <AnalyticsDateFilterBar
                     loading={Boolean(loadingStats)}
-                    currentFilters={{
-                      period: analyticsFilters?.period || "week",
-                      startDate: analyticsFilters?.startDate || "",
-                      endDate: analyticsFilters?.endDate || "",
-                    }}
-                    onFilterChange={(newFilters) => {
-                      if (setAnalyticsFilters) {
-                        setAnalyticsFilters((prev: any) => ({
-                          ...prev,
-                          period: newFilters.period,
-                          startDate: newFilters.startDate || "",
-                          endDate: newFilters.endDate || "",
-                        }));
-                      }
-                    }}
+                    currentFilters={analyticsBarFilters}
+                    onFilterChange={handleAnalyticsFilterChange}
                   />
 
                   {/* Filtered KPI Cards for Analytics Page */}
@@ -662,6 +690,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             status: "PENDING,IN_PROGRESS,ASSIGNED",
                             slaStatus: "",
                             dateRange: "",
+                            startDate: "",
+                            endDate: "",
                             priority: "",
                             assignmentStatus: ""
                           }));
@@ -675,6 +705,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             status: "", // All active status
                             slaStatus: "OVERDUE",
                             dateRange: "",
+                            startDate: "",
+                            endDate: "",
                             priority: "",
                             assignmentStatus: ""
                           }));
@@ -688,6 +720,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             status: "REVERTED",
                             slaStatus: "",
                             dateRange: "",
+                            startDate: "",
+                            endDate: "",
                             priority: "",
                             assignmentStatus: ""
                           }));
@@ -701,6 +735,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             status: "RESOLVED",
                             slaStatus: "",
                             dateRange: "",
+                            startDate: "",
+                            endDate: "",
                             priority: "",
                             assignmentStatus: ""
                           }));
@@ -714,6 +750,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             status: "REJECTED",
                             slaStatus: "",
                             dateRange: "",
+                            startDate: "",
+                            endDate: "",
                             priority: "",
                             assignmentStatus: ""
                           }));
@@ -727,6 +765,8 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             status: "ALL",
                             slaStatus: "",
                             dateRange: "",
+                            startDate: "",
+                            endDate: "",
                             priority: "",
                             assignmentStatus: ""
                           }));
@@ -2552,6 +2592,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               totalPages={departmentPagination.pages}
                               totalItems={departmentPagination.total}
                               itemsPerPage={departmentPagination.limit}
+                              disabled={Boolean(isUpdatingDepartments)}
                               onPageChange={(p) => setDepartmentPage(p)}
                             />
                           )}
@@ -3705,6 +3746,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               totalPages={userPagination.pages}
                               totalItems={userPagination.total}
                               itemsPerPage={userPagination.limit}
+                              disabled={Boolean(isUpdatingUsers)}
                               onPageChange={setUserPage}
                               className="mt-6 shadow-none border-t border-slate-100 rounded-none bg-slate-50/30"
                             />
@@ -3777,13 +3819,28 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                     className="text-xs h-8 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl border border-red-700 shadow-sm"
                                     title={`Delete ${selectedGrievances.size} selected grievance(s)`}
                                   >
-                                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                                    Delete ({selectedGrievances.size})
+                                    {isDeleting ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                        Deleting...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                        Delete ({selectedGrievances.size})
+                                      </>
+                                    )}
                                   </Button>
                                 )}
                             </div>
 
                             <div className="flex items-center gap-2">
+                              {isUpdatingGrievances && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 h-8">
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                                  Updating...
+                                </span>
+                              )}
                               <span className="text-[14px] font-bold text-slate-700 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-200 whitespace-nowrap h-8 flex items-center">
                                 Showing{" "}
                                 <span className="text-indigo-600 font-black px-1">
@@ -3798,13 +3855,15 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                 </span>
                                 <select
                                   value={grievancePagination.limit}
-                                  onChange={(e) =>
+                                  disabled={Boolean(isUpdatingGrievances)}
+                                  onChange={(e) => {
                                     setGrievancePagination((prev) => ({
                                       ...prev,
                                       limit: Number(e.target.value),
-                                    }))
-                                  }
-                                  className="text-[14px] font-bold text-slate-900 bg-transparent border-0 focus:ring-0 cursor-pointer p-0 h-auto"
+                                    }));
+                                    setGrievancePage(1);
+                                  }}
+                                  className="text-[14px] font-bold text-slate-900 bg-transparent border-0 focus:ring-0 cursor-pointer p-0 h-auto disabled:opacity-60"
                                 >
                                   {[10, 20, 25, 50, 100, 200, 250].map((l) => (
                                     <option key={l} value={l}>
@@ -3820,13 +3879,13 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                         {/* Filters Row */}
                         <div
                           className={cn(
-                            "flex-col sm:flex-row items-stretch sm:items-center gap-2",
+                            "grid grid-cols-1 min-[360px]:grid-cols-2 md:flex md:flex-row md:flex-wrap items-stretch md:items-center gap-2",
                             showGrievanceFiltersOnMobile
-                              ? "flex"
+                              ? "grid md:flex"
                               : "hidden md:flex",
                           )}
                         >
-                          <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-200 h-8">
+                          <div className="hidden md:flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-200 h-8">
                             <Filter className="w-3.5 h-3.5 text-indigo-500" />
                             <span className="text-[15px] font-bold text-slate-700 uppercase tracking-tight">
                               Filters
@@ -3836,6 +3895,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                           {/* Status Filter */}
                           <select
                             value={grievanceFilters.status}
+                            disabled={Boolean(isUpdatingGrievances)}
                             onChange={(e) => {
                               setGrievanceFilters((prev) => ({
                                 ...prev,
@@ -3843,7 +3903,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               }));
                               setGrievancePage(1);
                             }}
-                            className="text-[15px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full sm:max-w-[140px]"
+                            className="text-xs md:text-[14px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full md:max-w-[140px] disabled:opacity-60 disabled:cursor-wait min-w-0"
                             title="Filter by grievance status"
                           >
                             <option value="">📋 All Status</option>
@@ -3878,13 +3938,14 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               showOnlySubDepartmentsInMainSelect={
                                 isDepartmentAdminRole
                               }
-                              className="w-full md:w-auto"
+                              className="col-span-full md:w-auto"
                             />
                           )}
 
                           {/* Assignment Status Filter */}
                           <select
                             value={grievanceFilters.assignmentStatus}
+                            disabled={Boolean(isUpdatingGrievances)}
                             onChange={(e) => {
                               setGrievanceFilters((prev) => ({
                                 ...prev,
@@ -3892,10 +3953,10 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               }));
                               setGrievancePage(1);
                             }}
-                            className="text-[15px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full sm:max-w-[130px]"
+                            className="text-xs md:text-[14px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full md:max-w-[130px] disabled:opacity-60 disabled:cursor-wait min-w-0"
                             title="Filter by assignment status"
                           >
-                            <option value="">👥All Assignments</option>
+                            <option value="">👥 All Assignments</option>
                             <option value="assigned">✓ Assigned</option>
                             <option value="unassigned">○ Unassigned</option>
                           </select>
@@ -3903,6 +3964,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                           {/* Overdue Status Filter */}
                           <select
                             value={grievanceFilters.slaStatus}
+                            disabled={Boolean(isUpdatingGrievances)}
                             onChange={(e) => {
                               setGrievanceFilters((prev) => ({
                                 ...prev,
@@ -3910,7 +3972,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               }));
                               setGrievancePage(1);
                             }}
-                            className="text-[15px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full sm:max-w-[130px]"
+                            className="text-xs md:text-[14px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full md:max-w-[130px] disabled:opacity-60 disabled:cursor-wait min-w-0"
                             title="Filter by overdue status"
                           >
                             <option value="">⏱️ Overdue Status</option>
@@ -3922,20 +3984,32 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                           {/* Date Range Filter */}
                           <select
                             value={grievanceFilters.dateRange}
+                            disabled={Boolean(isUpdatingGrievances)}
                             onChange={(e) => {
-                              setGrievanceFilters((prev) => ({
-                                ...prev,
-                                dateRange: e.target.value,
-                              }));
-                              setGrievancePage(1);
+                              const nextRange = e.target.value;
+                              if (nextRange === "custom") {
+                                setGrievanceFilters((prev) => ({
+                                  ...prev,
+                                  dateRange: "custom",
+                                }));
+                              } else {
+                                setGrievanceFilters((prev) => ({
+                                  ...prev,
+                                  dateRange: nextRange,
+                                  startDate: "",
+                                  endDate: "",
+                                }));
+                                setGrievancePage(1);
+                              }
                             }}
-                            className="text-[15px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full sm:max-w-[110px]"
+                            className="text-xs md:text-[14px] h-8 px-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer font-medium w-full md:max-w-[140px] disabled:opacity-60 disabled:cursor-wait min-w-0"
                             title="Filter by date range"
                           >
                             <option value="">📅 All Time</option>
                             <option value="today">Today</option>
                             <option value="week">Last 7 Days</option>
                             <option value="month">Last 30 Days</option>
+                            <option value="custom">📅 Custom Range</option>
                           </select>
 
                           {/* Clear Filters */}
@@ -3947,10 +4021,14 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             grievanceFilters.slaStatus ||
                             grievanceFilters.priority ||
                             grievanceFilters.dateRange ||
+                            grievanceFilters.startDate ||
+                            grievanceFilters.endDate ||
                             grievanceSearch) && (
                             <Button
+                              type="button"
                               variant="ghost"
                               size="sm"
+                              disabled={Boolean(isUpdatingGrievances)}
                               onClick={() => {
                                 setGrievanceFilters({
                                   status: "",
@@ -3960,21 +4038,61 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                   assignmentStatus: "",
                                   slaStatus: "",
                                   dateRange: "",
+                                  startDate: "",
+                                  endDate: "",
                                   priority: "",
                                 });
                                 setGrievanceSearch("");
                                 setGrievancePage(1);
                               }}
-                              className="text-[15px] h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 font-medium"
+                              className="col-span-full md:col-span-1 text-xs md:text-[14px] h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg border border-red-200 font-medium w-full md:w-auto"
                               title="Clear all filters"
                             >
-                              <X className="w-3 h-3 mr-1" />
+                              {isUpdatingGrievances ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <X className="w-3 h-3 mr-1" />
+                              )}
                               Clear
                             </Button>
                           )}
 
 
                         </div>
+
+                        <GrievanceCustomDateBar
+                          visible={grievanceFilters.dateRange === "custom"}
+                          loading={Boolean(isUpdatingGrievances)}
+                          appliedStartDate={grievanceFilters.startDate}
+                          appliedEndDate={grievanceFilters.endDate}
+                          onApply={({ startDate, endDate }) => {
+                            const isSameRange =
+                              grievanceFilters.dateRange === "custom" &&
+                              grievanceFilters.startDate === startDate &&
+                              grievanceFilters.endDate === endDate &&
+                              grievancePage === 1;
+                            if (isSameRange) {
+                              void fetchGrievances(1, false);
+                              return;
+                            }
+                            setGrievanceFilters((prev) => ({
+                              ...prev,
+                              dateRange: "custom",
+                              startDate,
+                              endDate,
+                            }));
+                            setGrievancePage(1);
+                          }}
+                          onClear={() => {
+                            setGrievanceFilters((prev) => ({
+                              ...prev,
+                              dateRange: "",
+                              startDate: "",
+                              endDate: "",
+                            }));
+                            setGrievancePage(1);
+                          }}
+                        />
                       </div>
 
                       <CardContent className="p-0">
@@ -4007,7 +4125,12 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                         ) : (
                           <>
                             {/* Mobile Grid View */}
-                            <div className="md:hidden divide-y divide-slate-100">
+                            <div
+                              className={cn(
+                                "md:hidden divide-y divide-slate-100 transition-opacity duration-150",
+                                isUpdatingGrievances && "opacity-60 pointer-events-none",
+                              )}
+                            >
                               {getSortedData(grievances, "grievances").map((grievance, index) => {
                                 // --- SLA Calculation (mirrors desktop) ---
                                 const createdDate = new Date(grievance.createdAt);
@@ -4044,47 +4167,47 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                     className="p-3 bg-white active:bg-slate-50/80 transition-colors"
                                   >
                                     {/* ── TOP ROW: Number · GRV ID · Status badges ── */}
-                                    <div className="flex items-center justify-between mb-2.5">
-                                      <div className="flex items-center gap-1.5">
-                                        <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[15px] font-black shrink-0">
+                                    <div className="flex items-center justify-between gap-1.5 mb-2.5">
+                                      <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[11px] font-black shrink-0">
                                           {(grievancePage - 1) * grievancePagination.limit + index + 1}
                                         </span>
                                         <button
                                           onClick={() => openGrievanceDetail(grievance._id, grievance)}
-                                          className="font-mono text-[14px] font-bold text-slate-500 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 px-1.5 py-0.5 rounded transition-colors border border-slate-200"
+                                          className="font-mono text-[12px] font-bold text-slate-600 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 px-1.5 py-0.5 rounded transition-colors border border-slate-200 truncate"
                                         >
                                           {grievance.grievanceId}
                                         </button>
                                       </div>
 
-                                      <div className="flex items-center gap-1">
+                                      <div className="flex items-center gap-1 shrink-0">
                                         {/* SLA Badge */}
                                         {slaStatus === "completed" ? (
-                                          <span className="px-1.5 py-0.5 rounded-md text-[14px] font-black uppercase tracking-tight bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                          <span className="px-1.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-tight whitespace-nowrap leading-tight bg-emerald-50 text-emerald-700 border border-emerald-200">
                                             ✓ Done
                                           </span>
                                         ) : slaStatus === "overdue" ? (
                                           canSendOverdueReminder ? (
                                             <button
                                               onClick={() => openOverdueReminderDialog(grievance)}
-                                              className="px-1.5 py-0.5 rounded-md text-[14px] font-black uppercase tracking-tight bg-red-50 text-red-600 border border-red-200 animate-pulse"
+                                              className="px-1.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-tight whitespace-nowrap leading-tight bg-red-50 text-red-600 border border-red-200 animate-pulse"
                                             >
                                               ⚠ Overdue
                                             </button>
                                           ) : (
-                                            <span className="px-1.5 py-0.5 rounded-md text-[14px] font-black uppercase tracking-tight bg-red-50 text-red-600 border border-red-200">
+                                            <span className="px-1.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-tight whitespace-nowrap leading-tight bg-red-50 text-red-600 border border-red-200">
                                               ⚠ Overdue
                                             </span>
                                           )
                                         ) : (
-                                          <span className="px-1.5 py-0.5 rounded-md text-[14px] font-black uppercase tracking-tight bg-green-50 text-green-700 border border-green-200">
+                                          <span className="px-1.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-tight whitespace-nowrap leading-tight bg-green-50 text-green-700 border border-green-200">
                                             ✓ On Track
                                           </span>
                                         )}
 
                                         {/* Status Badge */}
                                         <span className={cn(
-                                          "px-1.5 py-0.5 rounded-md text-[14px] font-black uppercase tracking-tight border",
+                                          "px-1.5 py-0.5 rounded-md text-[11px] font-extrabold uppercase tracking-tight whitespace-nowrap leading-tight border",
                                           grievance.status === 'PENDING' || grievance.status === 'ASSIGNED' ? "bg-amber-50 text-amber-700 border-amber-200" :
                                           grievance.status === 'RESOLVED' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                                           grievance.status === 'IN_PROGRESS' ? "bg-blue-50 text-blue-700 border-blue-200" :
@@ -4164,11 +4287,17 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                         )}
                                         {canDeleteGrievance && (
                                           <button
+                                            type="button"
+                                            disabled={isDeleting}
                                             onClick={() => handleDeleteGrievance(grievance)}
-                                            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                            className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:pointer-events-none"
                                             title="Delete"
                                           >
-                                            <Trash2 className="w-3 h-3" />
+                                            {isDeleting ? (
+                                              <Loader2 className="w-3 h-3 animate-spin" />
+                                            ) : (
+                                              <Trash2 className="w-3 h-3" />
+                                            )}
                                           </button>
                                         )}
                                       </div>
@@ -4259,7 +4388,12 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                             </div>
 
                             {/* Desktop Table View */}
-                            <div className="hidden md:block border border-slate-200 rounded-2xl shadow-lg bg-white overflow-hidden">
+                            <div
+                              className={cn(
+                                "hidden md:block border border-slate-200 rounded-2xl shadow-lg bg-white overflow-hidden transition-opacity duration-150",
+                                isUpdatingGrievances && "opacity-60 pointer-events-none",
+                              )}
+                            >
                               <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                               <table className="w-full relative border-collapse table-fixed">
                                 <thead className="sticky top-0 z-20 bg-[#fcfdfe] border-b border-slate-200">
@@ -4824,7 +4958,11 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                                                 title="Delete grievance"
                                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                               >
-                                                <Trash2 className="w-4 h-4" />
+                                                {isDeleting ? (
+                                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                  <Trash2 className="w-4 h-4" />
+                                                )}
                                               </Button>
                                             )}
                                           </div>
@@ -4842,6 +4980,7 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
                               totalPages={grievancePagination.pages}
                               totalItems={grievancePagination.total}
                               itemsPerPage={grievancePagination.limit}
+                              disabled={Boolean(isUpdatingGrievances)}
                               onPageChange={setGrievancePage}
                               className="mt-6 shadow-none border-t border-slate-100 rounded-none bg-slate-50/30"
                             />

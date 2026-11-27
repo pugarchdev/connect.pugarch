@@ -82,6 +82,8 @@ export function useCachedQuery<T>({
 
     const queryFnRef = React.useRef(queryFn);
     queryFnRef.current = queryFn;
+    const activeKeyRef = React.useRef(key);
+    activeKeyRef.current = key;
 
     useEffect(() => {
     if (!enabled) {
@@ -150,22 +152,31 @@ export function useCachedQuery<T>({
     data,
     error,
     isLoading,
-    refetch: async () => {
-
-      setIsLoading(true);
+    refetch: async (options?: { silent?: boolean }) => {
+      const refetchKey = key;
+      const silent = Boolean(options?.silent);
+      if (!silent) {
+        setIsLoading(true);
+      }
       try {
         const result = await queryFnRef.current();
-        queryCache.set(key, {
+        queryCache.set(refetchKey, {
           data: result,
           error: undefined,
           updatedAt: Date.now(),
         });
+        if (activeKeyRef.current !== refetchKey) return;
         setData(result);
         setError(undefined);
       } catch (err) {
-        setError(err);
+        if (activeKeyRef.current !== refetchKey) return;
+        if (!silent) {
+          setError(err);
+        }
       } finally {
-        setIsLoading(false);
+        if (!silent && activeKeyRef.current === refetchKey) {
+          setIsLoading(false);
+        }
       }
     },
   };

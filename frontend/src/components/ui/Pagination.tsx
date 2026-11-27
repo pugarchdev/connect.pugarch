@@ -7,6 +7,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -16,6 +17,7 @@ export function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  disabled = false,
   className = ""
 }: PaginationProps) {
   if (totalItems === 0) return null;
@@ -52,7 +54,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(1)}
-          disabled={currentPage === 1}
+          disabled={disabled || currentPage === 1}
           className="h-9 w-9 p-0 rounded-xl border-slate-200 hover:bg-slate-50 disabled:opacity-50"
         >
           <ChevronsLeft className="w-4 h-4" />
@@ -61,7 +63,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
+          disabled={disabled || currentPage === 1}
           className="h-9 w-9 p-0 rounded-xl border-slate-200 hover:bg-slate-50 disabled:opacity-50"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -73,10 +75,11 @@ export function Pagination({
               key={page}
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
+              disabled={disabled || currentPage === page}
               onClick={() => onPageChange(page)}
               className={`h-9 w-9 p-0 rounded-xl transition-all duration-200 ${
                 currentPage === page 
-                  ? "bg-indigo-600 text-white shadow-indigo-200 shadow-lg border-indigo-600 hover:bg-indigo-700" 
+                  ? "bg-indigo-600 text-white shadow-indigo-200 shadow-lg border-indigo-600 hover:bg-indigo-700 disabled:opacity-100" 
                   : "border-slate-200 hover:bg-slate-50 text-slate-600"
               }`}
             >
@@ -89,7 +92,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
+          disabled={disabled || currentPage === totalPages}
           className="h-9 w-9 p-0 rounded-xl border-slate-200 hover:bg-slate-50 disabled:opacity-50"
         >
           <ChevronRight className="w-4 h-4" />
@@ -98,7 +101,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(totalPages)}
-          disabled={currentPage === totalPages}
+          disabled={disabled || currentPage === totalPages}
           className="h-9 w-9 p-0 rounded-xl border-slate-200 hover:bg-slate-50 disabled:opacity-50"
         >
           <ChevronsRight className="w-4 h-4" />

@@ -105,6 +105,10 @@ export const grievanceAPI = {
     slaStatus?: string;
     mainDeptId?: string;
     subDeptId?: string;
+    dateRange?: string;
+    startDate?: string;
+    endDate?: string;
+    tzOffset?: number;
   }): Promise<GrievancesResponse> => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -118,6 +122,12 @@ export const grievanceAPI = {
     if (params?.priority) queryParams.append('priority', params.priority);
     if (params?.search) queryParams.append('search', params.search);
     if (params?.slaStatus) queryParams.append('slaStatus', params.slaStatus);
+    if (params?.dateRange) queryParams.append('dateRange', params.dateRange);
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (typeof params?.tzOffset === 'number') {
+      queryParams.append('tzOffset', params.tzOffset.toString());
+    }
     
     return apiClient.get(`/grievances?${queryParams.toString()}`);
   },
