@@ -21,6 +21,8 @@ out/
 .env.production.local
 .env.backup
 .env.*
+!.env.example
+!backend/.env.example
 
 # IDE
 .vscode/

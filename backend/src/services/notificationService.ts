@@ -1449,12 +1449,19 @@ export async function notifyDepartmentAdminOnCreation(
                 const isDirectAdmin = userDeptId === targetChainId?.toString();
 
                 if (isDirectAdmin) {
+                  const grievanceObj = data.grievance || {
+                    grievanceId: data.grievanceId,
+                    citizenName: data.citizenName,
+                    citizenPhone: data.citizenPhone,
+                    companyId: data.companyId,
+                    category: data.category,
+                    language: data.language,
+                  };
+
                   await triggerGrievanceEvent({
                     eventKey: "GRIEVANCE_CREATED",
                     companyId: data.companyId,
-                    grievance: data.grievance || {
-                      grievanceId: data.grievanceId,
-                    },
+                    grievance: grievanceObj,
                     department: fullData.departmentName,
                     subDept: fullData.subDepartmentName,
                     recipientPhones: [user.phone],
@@ -1464,6 +1471,22 @@ export async function notifyDepartmentAdminOnCreation(
                     media: media.length > 0 ? media : undefined,
                     buttonParam: dashboardUrl,
                   });
+
+                  const { triggerGrievanceVoiceCall } = await import(
+                    "./voiceHubService"
+                  );
+                  await triggerGrievanceVoiceCall({
+                    grievance: grievanceObj,
+                    admin: user,
+                    departmentName: fullData.departmentName,
+                    subDepartmentName: fullData.subDepartmentName,
+                    language: data.language,
+                  }).catch((voiceErr) =>
+                    logger.error(
+                      "⚠️ [VoiceHub] Grievance voice call failed:",
+                      voiceErr,
+                    ),
+                  );
                 } else {
                   logger.info(
                     `🪜 [Hierarchy] Skipping WhatsApp for hierarchy admin ${user.email} (In-App notification only)`,

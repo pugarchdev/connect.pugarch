@@ -30,6 +30,7 @@ import grievanceRoutes from './routes/grievance.routes';
 import appointmentRoutes from './routes/appointment.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import whatsappRoutes from './routes/whatsapp.routes';
+import voiceHubRoutes from './routes/voiceHub.routes';
 import importRoutes from './routes/import.routes';
 import exportRoutes from './routes/export.routes';
 import auditRoutes from './routes/audit.routes';
@@ -245,6 +246,8 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 // Webhook routes (must be before /api routes to avoid middleware blocking)
+app.use('/webhook/voice-hub', voiceHubRoutes);
+app.use('/api/webhook/voice-hub', voiceHubRoutes);
 app.use('/webhook', whatsappRoutes);
 app.use('/api/webhook', whatsappRoutes); // Added this to match your Meta config
 app.use('/api/whatsapp', whatsappRoutes); // Standard Meta alias
